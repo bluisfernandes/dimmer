@@ -126,14 +126,20 @@ def set_brightness_ddcutil(value):
 
 
 def update_brightness_main():
-    global window, main
+    global window, main, second_monitor
     """Periodically checks and updates the slider and label with the current brightness."""
     current_brightness = read_current_brightness_brightnessctl()
     if current_brightness is not None:
         main.set(current_brightness)
         label_dict['main'].config(text=f"{current_brightness}")
+    
+    if second_monitor:
+        current_brightness = read_current_brightness_ddcutil()
+        if current_brightness is not None:
+            second_monitor.set(current_brightness)
+            label_dict['second'].config(text=f"{current_brightness}")
     # Schedule the function to run again after 1000 milliseconds (1 second)
-    window.after(100, update_brightness_main)
+    window.after(500, update_brightness_main)
 
 # Function to get the list of connected monitors
 def get_connected_monitors():
@@ -191,7 +197,8 @@ def create_window():
 
     # Get the list of connected monitors
     global connected_monitors
-    global main
+    global main, second_monitor
+    second_monitor = None
     connected_monitors = get_connected_monitors()
 
     # Create the main Tkinter window
