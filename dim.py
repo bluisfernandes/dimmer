@@ -5,11 +5,12 @@ import time
 
 # Hardcoded defaults
 DEFAULT_CONFIG = {
-    "brightness_screen_1": 100,
-    "brightness_screen_2": 100,
+    "dont_change_screen" : [],
     "link_sliders": False,
     "transparency": 87,
-    "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness"
+    "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness",
+    "min_brightness": 0.20,
+    "max_brightness": 1.00
 }
 
 # Function to load and merge configurations
@@ -26,6 +27,8 @@ def load_config():
 
 # Load the configuration
 config = load_config()
+
+config["min_brightness"] =min(config["min_brightness"], config["max_brightness"]) 
 
 # Throttle variables
 UPDATE_INTERVAL = 0.1  # seconds
@@ -59,8 +62,11 @@ def get_connected_monitors():
 
 # Function to set brightness using xrandr with throttling
 def set_brightness(display, brightness):
+    brightness = max(brightness, config["min_brightness"])
     current_time = time.time()
     if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
+        if display in config["dont_change_screen"]:
+            return
         last_update_time[display] = current_time
         cmd = f"xrandr --output {display} --brightness {brightness}"
         subprocess.run(cmd, shell=True)
@@ -116,13 +122,14 @@ def create_window():
 
     row = 0
     for monitor in connected_monitors:
+        brightness = int(max(read_actual_brightness(), config["min_brightness"] * 100))
         tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
-        slider = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val, m), showvalue=False, length=300)
-        slider.set(read_actual_brightness())  # Load from system
+        slider = tk.Scale(window, from_=config["min_brightness"] * 100, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val, m), showvalue=False, length=300)
+        slider.set(brightness)  # Load from system
         slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
         # Custom label for showing slider value with fixed width and monospaced font
-        label = tk.Label(window, text=str(read_actual_brightness()), font=("Courier", 10), width=5, anchor="w")
+        label = tk.Label(window, text=str(brightness), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
         label_dict[monitor] = label
 

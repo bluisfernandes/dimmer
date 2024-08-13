@@ -1,3 +1,7 @@
 {
-    "transparency": 87
+    "transparency": 87,
+    "dont_change_screen": ["eDP-1x", "DP-1x"],
+    "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness",
+    "min_brightness": 0.20
+  
 }
