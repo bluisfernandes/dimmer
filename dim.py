@@ -59,6 +59,26 @@ def read_current_brightness_brightnessctl():
         print(f"Error reading brightness: {e}")
         return None
 
+
+# Function to read current brightness from the external monitor with ddcutil
+def read_current_brightness_ddcutil():
+    try:
+        # Execute the brightnessctl command to get the current brightness
+        result = subprocess.run(
+            ['ddcutil', '--display', '1', 'getvcp', '10'], capture_output=True, text=True, check=True
+        )
+        brightness = None
+        for line in result.stdout.splitlines():
+            if 'Brightness' in line:
+                parts = line.split('=')
+                brightness = parts[1].split(',')[0].strip()
+                break
+
+        return brightness
+    except subprocess.CalledProcessError as e:
+        print(f"Error reading brightness: {e}")
+        return None
+
 # Function to set brightness with brightnessctl
 def set_brightness_brightnessctl(value):
     """Sets the brightness using brightnessctl."""
@@ -78,6 +98,26 @@ def set_brightness_brightnessctl(value):
         print(ve)
     
     label_dict['main'].config(text=value)
+
+# Function to set brightness with brightnessctl
+def set_brightness_ddcutil(value):
+    """Sets the brightness using brightnessctl."""
+    try:
+        # Ensure the value is an integer and within an acceptable range (e.g., 0-100%)
+        if not isinstance(value, int) or value < 0 or value > 100:
+            raise ValueError(f"Brightness value must be an integer between 0 and 100, not {value}, {type(value)}")
+
+        # Convert the percentage to the format brightnessctl accepts (e.g., '50%')
+        brightness_str = f'{value}'
+
+        # Execute the brightnessctl command to set the brightness
+        subprocess.run(['ddcutil', '--display', '1', 'setvcp', '10', brightness_str], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as e:
+        print(f"Error setting brightness: {e}")
+    except ValueError as ve:
+        print(ve)
+    
+    label_dict['second'].config(text=value)
 
 def update_brightness_main():
     global window, main
@@ -153,7 +193,7 @@ def create_window():
     window.title("Brightness Control")
 
     # Set a fixed size for the window
-    window.geometry("350x130")
+    window.geometry("350x180")
     
     # Prevent the window from being resized
     window.resizable(False, False)
@@ -187,15 +227,27 @@ def create_window():
         link_check.grid(row=row, column=0, columnspan=3, pady=10)
         row += 1
 
-    tk.Label(window, text=f"main Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+    tk.Label(window, text=f"main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
     main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
     main.set(read_current_brightness_brightnessctl())  # Load from system
     main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
-    # Custom label for showing slider value with fixed width and monospaced font
+    # Custom label for showing slider value
     label = tk.Label(window, text=str(read_current_brightness_brightnessctl()), font=("Courier", 10), width=5, anchor="w")
     label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
     label_dict['main'] = label
+    row += 1
+
+    
+    if len(connected_monitors) >1:
+        tk.Label(window, text=f"second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        second_monitor = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val: set_brightness_ddcutil(int(val)), showvalue=False, length=300)
+        second_monitor.set(read_current_brightness_ddcutil())  # Load from system
+        second_monitor.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+        # Custom label for showing slider value
+        label = tk.Label(window, text=str(read_current_brightness_ddcutil()), font=("Courier", 10), width=5, anchor="w")
+        label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
+        label_dict['second'] = label
 
 
 
