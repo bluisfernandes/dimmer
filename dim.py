@@ -79,6 +79,16 @@ def set_brightness_brightnessctl(value):
     
     label_dict['main'].config(text=value)
 
+def update_brightness_main():
+    global window, main
+    """Periodically checks and updates the slider and label with the current brightness."""
+    current_brightness = read_current_brightness_brightnessctl()
+    if current_brightness is not None:
+        main.set(current_brightness)
+        label_dict['main'].config(text=f"{current_brightness}")
+    # Schedule the function to run again after 1000 milliseconds (1 second)
+    window.after(100, update_brightness_main)
+
 # Function to get the list of connected monitors
 def get_connected_monitors():
     try:
@@ -135,6 +145,7 @@ def create_window():
 
     # Get the list of connected monitors
     global connected_monitors
+    global main
     connected_monitors = get_connected_monitors()
 
     # Create the main Tkinter window
@@ -177,16 +188,15 @@ def create_window():
         row += 1
 
     tk.Label(window, text=f"main Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
-    slider = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
-    slider.set(read_current_brightness_brightnessctl())  # Load from system
-    slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+    main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
+    main.set(read_current_brightness_brightnessctl())  # Load from system
+    main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
     # Custom label for showing slider value with fixed width and monospaced font
     label = tk.Label(window, text=str(read_current_brightness_brightnessctl()), font=("Courier", 10), width=5, anchor="w")
     label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
     label_dict['main'] = label
 
-    sliders.append(slider)
 
 
     # Set the initial transparency
@@ -195,6 +205,9 @@ def create_window():
     # Adjust column weights to make sure sliders expand
     window.grid_columnconfigure(1, weight=1)
     
+    # Start the periodic brightness update
+    update_brightness_main()
+
     # Start the Tkinter event loop
     window.mainloop()
 
