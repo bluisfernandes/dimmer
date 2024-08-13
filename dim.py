@@ -262,10 +262,11 @@ def create_window():
     if len(connected_monitors) >1:
         tk.Label(window, text=f"second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         second_monitor = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val: set_brightness_ddcutil(int(val)), showvalue=False, length=300)
-        second_monitor.set(read_current_brightness_ddcutil())  # Load from system
+        current_brightness = read_current_brightness_ddcutil()
+        second_monitor.set(current_brightness)  # Load from system
         second_monitor.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
         # Custom label for showing slider value
-        label = tk.Label(window, text=str(read_current_brightness_ddcutil()), font=("Courier", 10), width=5, anchor="w")
+        label = tk.Label(window, text=str(current_brightness), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
         label_dict['second'] = label
 
