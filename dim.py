@@ -27,8 +27,8 @@ def load_config():
 config = load_config()
 
 # Throttle variables
+UPDATE_INTERVAL = 0.1  # seconds
 last_update_time = {}
-update_interval = 0.1  # seconds
 
 # Function to read current brightness from the system
 def read_brightness(monitor):
@@ -56,7 +56,7 @@ def get_connected_monitors():
 # Function to set brightness using xrandr with throttling
 def set_brightness(display, brightness):
     current_time = time.time()
-    if display not in last_update_time or (current_time - last_update_time[display]) >= update_interval:
+    if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
         last_update_time[display] = current_time
         cmd = f"xrandr --output {display} --brightness {brightness}"
         subprocess.run(cmd, shell=True)
@@ -137,7 +137,7 @@ def create_window():
 
     # Adjust column weights to make sure sliders expand
     window.grid_columnconfigure(1, weight=1)
-
+    
     # Start the Tkinter event loop
     window.mainloop()
 
