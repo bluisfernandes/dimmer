@@ -14,8 +14,6 @@ DEFAULT_CONFIG = {
     "max_brightness": 1.00
 }
 
-cancel_flag = False
-
 # Function to load and merge configurations
 def load_config():
     try:
@@ -104,23 +102,17 @@ def set_brightness_brightnessctl(value):
 # Function to set brightness with brightnessctl
 def set_brightness_ddcutil(value):
     """Sets the brightness using ddcutil."""
-    global cancel_flag
     def set_brightness_thread(value):
-        global cancel_flag
-        local_flag = cancel_flag
         try:
             if not isinstance(value, int) or value < 0 or value > 100:
                 raise ValueError(f"Brightness value must be an integer between 0 and 100, not {value}, {type(value)}")
             
             brightness_str = f'{value}'
-             # Check if the operation should be canceled
-            if local_flag != cancel_flag:
-                return
             command_list = f"ddcutil --display 1 setvcp 10 {brightness_str}".split()
+
             subprocess.run(command_list, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-# Check again before setting the label
-            if local_flag == cancel_flag:
-                label_dict['second'].config(text=value)
+
+            label_dict['second'].config(text=value)
 
         except subprocess.CalledProcessError as e:
             print(f"Error setting brightness: {e}")
@@ -130,8 +122,6 @@ def set_brightness_ddcutil(value):
             label_dict['second'].config(text=value)
     
     # Run the command in a separate thread
-        # Increment the cancel flag to indicate a new operation
-    cancel_flag = not cancel_flag
     threading.Thread(target=set_brightness_thread, args=(value,)).start()
 
 
