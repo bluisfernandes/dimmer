@@ -109,6 +109,7 @@ def create_window():
     
     # Prevent the window from being resized
     window.resizable(False, False)
+    window.attributes("-topmost", True)
 
     # Initialize Tkinter variables 
     link_sliders = tk.BooleanVar(value=config['link_sliders'])
