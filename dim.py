@@ -68,12 +68,6 @@ def update_brightness(monitor, val):
     set_brightness(monitor, brightness)
     label_dict[monitor].config(text=val)
 
-# # Function to update the transparency of the window
-# def update_transparency(val):
-#     alpha = float(val) / 100
-#     window.attributes("-alpha", alpha)
-#     label_transparency_value.config(text=val)
-
 # Function to synchronize slider values when linking is enabled
 def synchronize_sliders(val):
     # Avoid updating sliders if they are not linked
@@ -137,16 +131,6 @@ def create_window():
         link_check = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
         link_check.grid(row=row, column=0, columnspan=3, pady=10)
         row += 1
-
-    # # Create and pack the transparency slider
-    # tk.Label(window, text="Transparency").grid(row=row, column=0, padx=10, pady=5, sticky="w")
-    # transparency_slider = tk.Scale(window, from_=0, to=100, orient="horizontal", command=update_transparency, showvalue=False, length=300)
-    # transparency_slider.set(config['transparency'])  # Load from config
-    # transparency_slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
-
-    # # Custom label for showing transparency value with fixed width and monospaced font
-    # label_transparency_value = tk.Label(window, text=str(config['transparency']), font=("Courier", 10), width=5, anchor="w")
-    # label_transparency_value.grid(row=row, column=2, padx=10, pady=5, sticky="w")
 
     # Set the initial transparency
     window.after(100, lambda: window.attributes("-alpha", config['transparency'] / 100))
