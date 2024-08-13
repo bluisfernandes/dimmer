@@ -32,7 +32,7 @@ config = load_config()
 config["min_brightness"] =min(config["min_brightness"], config["max_brightness"]) 
 
 # Throttle variables
-UPDATE_INTERVAL = 0.1  # seconds
+UPDATE_INTERVAL = 0.3  # seconds
 last_update_time = {}
 
 # Function to read current brightness from the system
@@ -121,8 +121,13 @@ def set_brightness_ddcutil(value):
         finally:
             label_dict['second'].config(text=value)
     
-    # Run the command in a separate thread
-    threading.Thread(target=set_brightness_thread, args=(value,)).start()
+    current_time = time.time()
+    if 'ddcutil' not in last_update_time or (current_time - last_update_time['ddcutil']) >= UPDATE_INTERVAL:
+
+        last_update_time['ddcutil'] = current_time
+
+        # Run the command in a separate thread
+        threading.Thread(target=set_brightness_thread, args=(value,)).start()
 
 
 def update_brightness_main():
