@@ -8,7 +8,8 @@ DEFAULT_CONFIG = {
     "brightness_screen_1": 100,
     "brightness_screen_2": 100,
     "link_sliders": False,
-    "transparency": 60
+    "transparency": 87,
+    "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness"
 }
 
 # Function to load and merge configurations
@@ -31,12 +32,15 @@ UPDATE_INTERVAL = 0.1  # seconds
 last_update_time = {}
 
 # Function to read current brightness from the system
-def read_brightness(monitor):
+def read_actual_brightness():
     try:
-        with open(f"/sys/class/backlight/intel_backlight/actual_brightness", "r") as f:
-            return int(f.read().strip())
+        with open(config['actual_brightness_path'], "r") as f:
+            content = f.read()
+            if content.strip():
+                val = int(float(content.strip()) / 1200)
+                return val
     except FileNotFoundError:
-        return 1200  # Default value if unable to read
+        return 100  # Default value if unable to read
 
 # Function to get the list of connected monitors
 def get_connected_monitors():
@@ -114,11 +118,11 @@ def create_window():
     for monitor in connected_monitors:
         tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         slider = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val, m), showvalue=False, length=300)
-        slider.set(read_brightness(monitor))  # Load from system
+        slider.set(read_actual_brightness())  # Load from system
         slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
         # Custom label for showing slider value with fixed width and monospaced font
-        label = tk.Label(window, text=str(read_brightness(monitor)), font=("Courier", 10), width=5, anchor="w")
+        label = tk.Label(window, text=str(read_actual_brightness()), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
         label_dict[monitor] = label
 
