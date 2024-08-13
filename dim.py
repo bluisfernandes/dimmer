@@ -32,7 +32,7 @@ config = load_config()
 config["min_brightness"] =min(config["min_brightness"], config["max_brightness"]) 
 
 # Throttle variables
-UPDATE_INTERVAL = 0.3  # seconds
+UPDATE_INTERVAL = 0.1  # seconds
 last_update_time = {}
 
 # Function to read current brightness from the system
@@ -144,7 +144,7 @@ def update_brightness_main():
             second_monitor.set(current_brightness)
             label_dict['second'].config(text=f"{current_brightness}")
     # Schedule the function to run again after 1000 milliseconds (1 second)
-    window.after(500, update_brightness_main)
+    window.after(3000, update_brightness_main)
 
 # Function to get the list of connected monitors
 def get_connected_monitors():
@@ -242,7 +242,9 @@ def create_window():
     # Create and pack the check button to link the sliders
     if len(connected_monitors) > 1:
         link_check = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
-        link_check.grid(row=row, column=0, columnspan=3, pady=10)
+        link_check.grid(row=row, column=0, columnspan=1, pady=10)
+        link_check2 = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
+        link_check2.grid(row=row, column=1, columnspan=1, pady=10)
         row += 1
 
     tk.Label(window, text=f"main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
