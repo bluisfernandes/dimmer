@@ -132,9 +132,10 @@ def create_window():
         row += 1
 
     # Create and pack the check button to link the sliders
-    link_check = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
-    link_check.grid(row=row, column=0, columnspan=3, pady=10)
-    row += 1
+    if len(connected_monitors) > 1:
+        link_check = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
+        link_check.grid(row=row, column=0, columnspan=3, pady=10)
+        row += 1
 
     # Create and pack the transparency slider
     tk.Label(window, text="Transparency").grid(row=row, column=0, padx=10, pady=5, sticky="w")
