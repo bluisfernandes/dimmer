@@ -52,8 +52,9 @@ def read_actual_brightness():
 def read_current_brightness_brightnessctl():
     try:
         # Execute the brightnessctl command to get the current brightness
+        command_list = f"brightnessctl get".split()
         result = subprocess.run(
-            ['brightnessctl', 'get'], capture_output=True, text=True, check=True
+            command_list, capture_output=True, text=True, check=True
         )
         # Convert the output to an integer and return it
         brightness = int(result.stdout.strip())
@@ -67,9 +68,8 @@ def read_current_brightness_brightnessctl():
 def read_current_brightness_ddcutil():
     try:
         # Execute the brightnessctl command to get the current brightness
-        result = subprocess.run(
-            ['ddcutil', '--display', '1', 'getvcp', '10'], capture_output=True, text=True, check=True
-        )
+        command_list = f"ddcutil --display 1 getvcp 10".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
         brightness = None
         for line in result.stdout.splitlines():
             if 'Brightness' in line:
@@ -92,7 +92,8 @@ def set_brightness_brightnessctl(value):
         brightness_str = f'{value}'
 
         # Execute the brightnessctl command to set the brightness
-        subprocess.run(['brightnessctl', 'set', brightness_str], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        command_list = f"brightnessctl set {brightness_str}".split()
+        subprocess.run(command_list, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as e:
         print(f"Error setting brightness: {e}")
     except ValueError as ve:
@@ -115,7 +116,8 @@ def set_brightness_ddcutil(value):
              # Check if the operation should be canceled
             if local_flag != cancel_flag:
                 return
-            subprocess.run(['ddcutil', '--display', '1', 'setvcp', '10', brightness_str], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            command_list = f"ddcutil --display 1 setvcp 10 {brightness_str}".split()
+            subprocess.run(command_list, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 # Check again before setting the label
             if local_flag == cancel_flag:
                 label_dict['second'].config(text=value)
@@ -166,8 +168,8 @@ def set_brightness(display, brightness):
         if display in config["dont_change_screen"]:
             return
         last_update_time[display] = current_time
-        cmd = f"xrandr --output {display} --brightness {brightness}"
-        subprocess.run(cmd, shell=True)
+        cmd_list = f"xrandr --output {display} --brightness {brightness}".split()
+        subprocess.run(cmd_list)
         
 # Update brightness based on slider value
 def update_brightness(monitor, val):
