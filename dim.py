@@ -2,6 +2,7 @@ import tkinter as tk
 import subprocess
 import json
 import time
+import threading
 
 # Hardcoded defaults
 DEFAULT_CONFIG = {
@@ -12,6 +13,8 @@ DEFAULT_CONFIG = {
     "min_brightness": 0.20,
     "max_brightness": 1.00
 }
+
+cancel_flag = False
 
 # Function to load and merge configurations
 def load_config():
@@ -83,11 +86,9 @@ def read_current_brightness_ddcutil():
 def set_brightness_brightnessctl(value):
     """Sets the brightness using brightnessctl."""
     try:
-        # Ensure the value is an integer and within an acceptable range (e.g., 0-100%)
         if not isinstance(value, int) or value < 1200 or value > 120000:
             raise ValueError(f"Brightness value must be an integer between 1200 and 120000, not {value}, {type(value)}")
 
-        # Convert the percentage to the format brightnessctl accepts (e.g., '50%')
         brightness_str = f'{value}'
 
         # Execute the brightnessctl command to set the brightness
@@ -101,23 +102,36 @@ def set_brightness_brightnessctl(value):
 
 # Function to set brightness with brightnessctl
 def set_brightness_ddcutil(value):
-    """Sets the brightness using brightnessctl."""
-    try:
-        # Ensure the value is an integer and within an acceptable range (e.g., 0-100%)
-        if not isinstance(value, int) or value < 0 or value > 100:
-            raise ValueError(f"Brightness value must be an integer between 0 and 100, not {value}, {type(value)}")
+    """Sets the brightness using ddcutil."""
+    global cancel_flag
+    def set_brightness_thread(value):
+        global cancel_flag
+        local_flag = cancel_flag
+        try:
+            if not isinstance(value, int) or value < 0 or value > 100:
+                raise ValueError(f"Brightness value must be an integer between 0 and 100, not {value}, {type(value)}")
+            
+            brightness_str = f'{value}'
+             # Check if the operation should be canceled
+            if local_flag != cancel_flag:
+                return
+            subprocess.run(['ddcutil', '--display', '1', 'setvcp', '10', brightness_str], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+# Check again before setting the label
+            if local_flag == cancel_flag:
+                label_dict['second'].config(text=value)
 
-        # Convert the percentage to the format brightnessctl accepts (e.g., '50%')
-        brightness_str = f'{value}'
-
-        # Execute the brightnessctl command to set the brightness
-        subprocess.run(['ddcutil', '--display', '1', 'setvcp', '10', brightness_str], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError as e:
-        print(f"Error setting brightness: {e}")
-    except ValueError as ve:
-        print(ve)
+        except subprocess.CalledProcessError as e:
+            print(f"Error setting brightness: {e}")
+        except ValueError as ve:
+            print(ve)
+        finally:
+            label_dict['second'].config(text=value)
     
-    label_dict['second'].config(text=value)
+    # Run the command in a separate thread
+        # Increment the cancel flag to indicate a new operation
+    cancel_flag = not cancel_flag
+    threading.Thread(target=set_brightness_thread, args=(value,)).start()
+
 
 def update_brightness_main():
     global window, main
