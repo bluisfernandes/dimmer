@@ -8,6 +8,7 @@ import threading
 DEFAULT_CONFIG = {
     "dont_change_screen" : [],
     "link_sliders": False,
+    "link_sliders2": True,
     "transparency": 87,
     "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness",
     "min_brightness": 0.20,
@@ -92,6 +93,8 @@ def set_brightness_brightnessctl(value):
         # Execute the brightnessctl command to set the brightness
         command_list = f"brightnessctl set {brightness_str}".split()
         subprocess.run(command_list, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if link_sliders2.get():
+            set_brightness_ddcutil(int(value / 1200))
     except subprocess.CalledProcessError as e:
         print(f"Error setting brightness: {e}")
     except ValueError as ve:
@@ -111,15 +114,16 @@ def set_brightness_ddcutil(value):
             command_list = f"ddcutil --display 1 setvcp 10 {brightness_str}".split()
 
             subprocess.run(command_list, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-            label_dict['second'].config(text=value)
+            if second_monitor:
+                label_dict['second'].config(text=value)
 
         except subprocess.CalledProcessError as e:
             print(f"Error setting brightness: {e}")
         except ValueError as ve:
             print(ve)
         finally:
-            label_dict['second'].config(text=value)
+            if second_monitor:
+                label_dict['second'].config(text=value)
     
     current_time = time.time()
     if 'ddcutil' not in last_update_time or (current_time - last_update_time['ddcutil']) >= UPDATE_INTERVAL:
@@ -141,7 +145,12 @@ def update_brightness_main():
             label_dict['main'].config(text=f"{current_brightness}")
         
         if second_monitor:
-            current_brightness = read_current_brightness_ddcutil()
+            if link_sliders2.get():
+                current_brightness = int(current_brightness / 1200)
+            
+            else:
+                current_brightness = read_current_brightness_ddcutil()
+            
             if current_brightness is not None:
                 second_monitor.set(current_brightness)
                 label_dict['second'].config(text=f"{current_brightness}")
@@ -204,7 +213,7 @@ def on_slider_change(val, monitor=None):
 
 # Function to create the brightness control window
 def create_window():
-    global window, link_sliders, label_dict, sliders
+    global window, link_sliders, label_dict, sliders, sliders_hardware, link_sliders2
     global label_transparency_value
 
     # Get the list of connected monitors
@@ -226,8 +235,10 @@ def create_window():
 
     # Initialize Tkinter variables 
     link_sliders = tk.BooleanVar(value=config['link_sliders'])
+    link_sliders2 = tk.BooleanVar(value=config['link_sliders2'])
     label_dict = {}
     sliders = []
+    sliders_hardware = []
 
     row = 0
     for monitor in connected_monitors:
@@ -248,9 +259,9 @@ def create_window():
 
     # Create and pack the check button to link the sliders
     if len(connected_monitors) > 1:
-        link_check = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
+        link_check = tk.Checkbutton(window, text="Link software", variable=link_sliders)
         link_check.grid(row=row, column=0, columnspan=1, pady=10)
-        link_check2 = tk.Checkbutton(window, text="Link Sliders", variable=link_sliders)
+        link_check2 = tk.Checkbutton(window, text="Link hardware", variable=link_sliders2)
         link_check2.grid(row=row, column=1, columnspan=1, pady=10)
         row += 1
 
@@ -258,6 +269,7 @@ def create_window():
     main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
     main.set(read_current_brightness_brightnessctl())  # Load from system
     main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+    sliders_hardware.append(main)
 
     # Custom label for showing slider value
     label = tk.Label(window, text=str(read_current_brightness_brightnessctl()), font=("Courier", 10), width=5, anchor="w")
@@ -272,6 +284,8 @@ def create_window():
         current_brightness = read_current_brightness_ddcutil()
         second_monitor.set(current_brightness)  # Load from system
         second_monitor.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+        sliders_hardware.append(second_monitor)
+
         # Custom label for showing slider value
         label = tk.Label(window, text=str(current_brightness), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
