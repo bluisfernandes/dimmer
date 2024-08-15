@@ -133,6 +133,37 @@ def set_brightness_ddcutil(value):
         # Run the command in a separate thread
         threading.Thread(target=set_brightness_thread, args=(value,)).start()
 
+# Function to set brightness using xrandr with throttling
+def set_brightness(display, brightness):
+    brightness = max(brightness, config["min_brightness"])
+    current_time = time.time()
+    if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
+        if display in config["dont_change_screen"]:
+            return
+        last_update_time[display] = current_time
+        cmd_list = f"xrandr --output {display} --brightness {brightness}".split()
+        subprocess.run(cmd_list)
+
+# Function to get the list of connected monitors
+def get_connected_monitors():
+    try:
+        output = subprocess.check_output(['xrandr'], text=True)
+        lines = output.split('\n')
+        monitors = []
+        for line in lines:
+            if ' connected ' in line:
+                monitor_name = line.split(' ')[0]
+                monitors.append(monitor_name)
+        return monitors
+    except subprocess.CalledProcessError as e:
+        print("Error running xrandr:", e)
+        return []
+
+# Update brightness based on slider value
+def update_brightness(monitor, val):
+    brightness = float(val) / 100
+    set_brightness(monitor, brightness)
+    label_dict[monitor].config(text=val)
 
 def update_brightness_main():
     global window
@@ -160,39 +191,6 @@ def update_brightness_main():
     update_thread.start()
 
     window.after(1000, update_brightness_main)
-
-
-# Function to get the list of connected monitors
-def get_connected_monitors():
-    try:
-        output = subprocess.check_output(['xrandr'], text=True)
-        lines = output.split('\n')
-        monitors = []
-        for line in lines:
-            if ' connected ' in line:
-                monitor_name = line.split(' ')[0]
-                monitors.append(monitor_name)
-        return monitors
-    except subprocess.CalledProcessError as e:
-        print("Error running xrandr:", e)
-        return []
-
-# Function to set brightness using xrandr with throttling
-def set_brightness(display, brightness):
-    brightness = max(brightness, config["min_brightness"])
-    current_time = time.time()
-    if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
-        if display in config["dont_change_screen"]:
-            return
-        last_update_time[display] = current_time
-        cmd_list = f"xrandr --output {display} --brightness {brightness}".split()
-        subprocess.run(cmd_list)
-        
-# Update brightness based on slider value
-def update_brightness(monitor, val):
-    brightness = float(val) / 100
-    set_brightness(monitor, brightness)
-    label_dict[monitor].config(text=val)
 
 # Function to synchronize slider values when linking is enabled
 def synchronize_sliders(val):
