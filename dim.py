@@ -67,7 +67,7 @@ def read_current_brightness_brightnessctl():
 def read_current_brightness_ddcutil():
     try:
         # Execute the brightnessctl command to get the current brightness
-        command_list = f"ddcutil --display 1 getvcp 10".split()
+        command_list = "ddcutil --display 1 getvcp 10".split()
         result = subprocess.run(command_list, capture_output=True, text=True, check=True)
         brightness = None
         for line in result.stdout.splitlines():
@@ -265,7 +265,7 @@ def create_window():
         link_check2.grid(row=row, column=1, columnspan=1, pady=10)
         row += 1
 
-    tk.Label(window, text=f"main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+    tk.Label(window, text="main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
     main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
     main.set(read_current_brightness_brightnessctl())  # Load from system
     main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
@@ -279,7 +279,7 @@ def create_window():
 
     
     if len(connected_monitors) >1:
-        tk.Label(window, text=f"second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        tk.Label(window, text="second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         second_monitor = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val: set_brightness_ddcutil(int(val)), showvalue=False, length=300)
         current_brightness = read_current_brightness_ddcutil()
         second_monitor.set(current_brightness)  # Load from system
