@@ -8,7 +8,8 @@ DEFAULT_CONFIG = {
     "transparency": 87,
     "actual_brightness_path": "/sys/class/backlight/intel_backlight/actual_brightness",
     "min_brightness": 0.20,
-    "max_brightness": 1.00
+    "max_brightness": 1.00,
+    "update_interval": 0.1
 }
 
 class Config:

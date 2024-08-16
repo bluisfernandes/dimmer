@@ -3,8 +3,6 @@ import subprocess
 import time
 import threading
 
-UPDATE_INTERVAL=0.1
-
 # Function to read current brightness from the system
 def read_actual_brightness(ratio=1):
     try:
@@ -54,7 +52,7 @@ def set_brightness(display, brightness, last_update_time):
     brightness = max(brightness, config.MIN_BRIGHTNESS)
     current_time = time.time()
     # print("###", current_time, last_update_time[display])
-    if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
+    if display not in last_update_time or (current_time - last_update_time[display]) >= config.UPDATE_INTERVAL:
         if display in config.DONT_CHANGE_SCREEN:
             return
         last_update_time[display] = current_time
@@ -85,7 +83,7 @@ def set_brightness_ddcutil(value, second_monitor, label_dict, last_update_time):
                 label_dict['second'].config(text=value)
     
     current_time = time.time()
-    if 'ddcutil' not in last_update_time or (current_time - last_update_time['ddcutil']) >= UPDATE_INTERVAL:
+    if 'ddcutil' not in last_update_time or (current_time - last_update_time['ddcutil']) >= config.UPDATE_INTERVAL:
 
         last_update_time['ddcutil'] = current_time
 
