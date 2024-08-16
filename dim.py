@@ -1,5 +1,10 @@
 import tkinter as tk
+import threading
 from configs import config
+from PIL import Image, ImageDraw
+from pystray import MenuItem as item
+import pystray
+import math
 from utils import (read_actual_brightness, 
                    read_current_brightness_ddcutil, 
                    get_connected_monitors,
@@ -9,9 +14,46 @@ from utils import (read_actual_brightness,
                    update_brightness_main
                    )
 
+# Tkinter window (GUI)
+class MyApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Brightness Control")
+        self.is_open = True
+
+    def open(self):
+        if not self.is_open:
+            self.root.deiconify()
+            self.is_open = True
+
+    def close(self):
+        if self.is_open:
+            self.root.withdraw()
+            self.is_open = False
+
+# Callback functions for tray menu
+def on_open(icon, item):
+    app.open()
+
+def on_close(icon, item):
+    app.close()
+
+def on_quit(icon, item):
+    # Open the app GUI to avoid runtimeError with thread.
+    app.open()
+    icon.stop()
+    window.quit()
+
+# Setup tray menu
+menu = (
+    item('Open GUI', on_open),
+    item('Close GUI', on_close),
+    item('Quit', on_quit)
+)
 
 # Create the brightness GUI
 def create_window():
+    global window, app
     # Throttle variables
     last_update_time = {}    
     second_monitor = None
@@ -19,7 +61,9 @@ def create_window():
 
     # Create the main Tkinter window
     window = tk.Tk()
-    window.title("Brightness Control")
+    app = MyApp(window)
+    window.protocol("WM_DELETE_WINDOW", app.close)
+    # window.title("Brightness Control")
 
     # Set a fixed size for the window
     window.geometry("350x180")
@@ -103,5 +147,48 @@ def create_window():
     # Start the Tkinter event loop
     window.mainloop()
 
-# Create and show the window immediately
+# Function to create a simple image for the tray icon
+def create_image(color):
+    width = 64
+    height = 64
+    image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(image)
+    dc.rectangle((0, 0, width, height), fill=color)
+    return image
+
+def create_image(color):
+    width = 64
+    height = 64
+    image = Image.new('RGBA', (width, height), (173, 216, 230, 255))  # Light blue background
+    dc = ImageDraw.Draw(image)
+    
+    # Draw the circle in the middle
+    circle_radius = 12
+    circle_center = (width // 2, height // 2)
+    dc.ellipse(
+        (circle_center[0] - circle_radius, circle_center[1] - circle_radius,
+         circle_center[0] + circle_radius, circle_center[1] + circle_radius),
+        fill="black"
+    )
+    
+    # Draw the sun rays
+    num_rays = 8
+    ray_length = 25
+    for i in range(num_rays):
+        angle = 360 / num_rays * i
+        x_end = circle_center[0] + ray_length * math.cos(math.radians(angle))
+        y_end = circle_center[1] + ray_length * math.sin(math.radians(angle))
+        dc.line([circle_center, (x_end, y_end)], fill="black", width=6)
+    
+    return image
+
+# Function to set up the tray icon
+def setup(icon):
+    icon.visible = True
+    
+# Create and run the tray icon in a separate thread
+icon = pystray.Icon("brightness_icon", create_image((255, 0, 0, 255)), menu=menu)
+threading.Thread(target=icon.run, args=(setup,)).start()
+
+# Start the Tkinter app in the main thread
 create_window()
