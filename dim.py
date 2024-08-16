@@ -62,6 +62,7 @@ def create_window():
     # Create the main Tkinter window
     window = tk.Tk()
     app = MyApp(window)
+    app.close()
     window.protocol("WM_DELETE_WINDOW", app.close)
     # window.title("Brightness Control")
 
