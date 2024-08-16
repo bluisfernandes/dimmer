@@ -37,31 +37,15 @@ UPDATE_INTERVAL = 0.1  # seconds
 last_update_time = {}
 
 # Function to read current brightness from the system
-def read_actual_brightness():
+def read_actual_brightness(ratio=1):
     try:
         with open(config['actual_brightness_path'], "r") as f:
             content = f.read()
             if content.strip():
-                val = int(float(content.strip()) / 1200)
+                val = int(float(content.strip()) * ratio)
                 return val
     except FileNotFoundError:
         return 100  # Default value if unable to read
-
-# Function to read current brightness from the system with brightnessctl
-def read_current_brightness_brightnessctl():
-    try:
-        # Execute the brightnessctl command to get the current brightness
-        command_list = f"brightnessctl get".split()
-        result = subprocess.run(
-            command_list, capture_output=True, text=True, check=True
-        )
-        # Convert the output to an integer and return it
-        brightness = int(result.stdout.strip())
-        return brightness
-    except subprocess.CalledProcessError as e:
-        print(f"Error reading brightness: {e}")
-        return None
-
 
 # Function to read current brightness from the external monitor with ddcutil
 def read_current_brightness_ddcutil():
@@ -170,7 +154,7 @@ def update_brightness_main():
     def update_brightness_main_thread():
         global main, second_monitor
         """Periodically checks and updates the slider and label with the current brightness."""
-        current_brightness = read_current_brightness_brightnessctl()
+        current_brightness = read_actual_brightness()
         if current_brightness is not None:
             main.set(current_brightness)
             label_dict['main'].config(text=f"{current_brightness}")
@@ -240,7 +224,7 @@ def create_window():
 
     row = 0
     for monitor in connected_monitors:
-        brightness = int(max(read_actual_brightness(), config["min_brightness"] * 100))
+        brightness = int(max(read_actual_brightness(ratio=1/1200), config["min_brightness"] * 100))
         tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         slider = tk.Scale(window, from_=config["min_brightness"] * 100, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val, m), showvalue=False, length=300)
         slider.set(brightness)  # Load from system
@@ -265,12 +249,12 @@ def create_window():
 
     tk.Label(window, text="main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
     main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val)), showvalue=False, length=300)
-    main.set(read_current_brightness_brightnessctl())  # Load from system
+    main.set(read_actual_brightness())  # Load from system
     main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
     sliders_hardware.append(main)
 
     # Custom label for showing slider value
-    label = tk.Label(window, text=str(read_current_brightness_brightnessctl()), font=("Courier", 10), width=5, anchor="w")
+    label = tk.Label(window, text=str(read_actual_brightness()), font=("Courier", 10), width=5, anchor="w")
     label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
     label_dict['main'] = label
     row += 1
