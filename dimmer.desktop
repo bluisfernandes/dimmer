@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Dimmer Brightness Control
+Exec=env PYSTRAY_BACKEND=gtk python3 /home/onofre/projects/dimmer/dim.py
+X-GNOME-Autostart-enabled=true
+Comment=Control the brightness via software and hardware
