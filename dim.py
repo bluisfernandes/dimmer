@@ -44,10 +44,20 @@ def on_quit(icon, item):
     icon.stop()
     window.quit()
 
+def on_refresh(icon,item):
+    import os
+    import sys
+    import subprocess
+    python = sys.executable or 'python3'
+    on_quit(icon, None)
+    subprocess.Popen([python] + sys.argv)
+    sys.exit()
+
 # Setup tray menu
 menu = (
     item('Open', on_open),
     item('Hide', on_close),
+    item('Refresh', on_refresh),
     item('Quit', on_quit)
 )
 
