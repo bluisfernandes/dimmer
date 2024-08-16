@@ -46,8 +46,8 @@ def on_quit(icon, item):
 
 # Setup tray menu
 menu = (
-    item('Open GUI', on_open),
-    item('Close GUI', on_close),
+    item('Open', on_open),
+    item('Hide', on_close),
     item('Quit', on_quit)
 )
 
