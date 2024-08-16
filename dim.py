@@ -43,18 +43,19 @@ def create_window():
     sliders = []
     sliders_hardware = []
 
+    initial_brightness = config.MAX_BRIGHTNESS * 100
+
     row = 0
     for monitor in connected_monitors:
-        brightness = int(max(read_actual_brightness(ratio=1/1200), config.MIN_BRIGHTNESS * 100))
         tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         
         slider = tk.Scale(window, from_=config.LINK_SLIDERS * 100, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val,last_update_time, label_dict, sliders, link_sliders, m), showvalue=False, length=300)
         
-        slider.set(brightness)  # Load from system
+        slider.set(initial_brightness)  # Load from system
         slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
         # Custom label for showing slider value with fixed width and monospaced font
-        label = tk.Label(window, text=str(brightness), font=("Courier", 10), width=5, anchor="w")
+        label = tk.Label(window, text=str(initial_brightness), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
         label_dict[monitor] = label
 
