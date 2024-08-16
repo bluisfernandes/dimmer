@@ -9,19 +9,11 @@ from utils import (read_actual_brightness,
                    update_brightness_main
                    )
 
-# Throttle variables
-UPDATE_INTERVAL = 0.1  # seconds
-last_update_time = {}
 
-
-# Function to create the brightness control window
+# Create the brightness GUI
 def create_window():
-    global window, link_sliders, label_dict, sliders, sliders_hardware, link_sliders2
-    global label_transparency_value
-
-    # Get the list of connected monitors
-    global connected_monitors
-    global main, second_monitor
+    # Throttle variables
+    last_update_time = {}    
     second_monitor = None
     connected_monitors = get_connected_monitors()
 
@@ -42,9 +34,9 @@ def create_window():
     label_dict = {}
     sliders = []
     sliders_hardware = []
-
     initial_brightness = config.MAX_BRIGHTNESS * 100
 
+    # Scales via software
     row = 0
     for monitor in connected_monitors:
         tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
@@ -71,6 +63,8 @@ def create_window():
         link_check2.grid(row=row, column=1, columnspan=1, pady=10)
         row += 1
 
+
+    # Scales via hardware
     tk.Label(window, text="main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
     main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val), second_monitor, label_dict, link_sliders2, last_update_time), showvalue=False, length=300)
     main.set(read_actual_brightness())  # Load from system
@@ -83,7 +77,6 @@ def create_window():
     label_dict['main'] = label
     row += 1
 
-    
     if len(connected_monitors) >1:
         tk.Label(window, text="second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
         second_monitor = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val: set_brightness_ddcutil(int(val),second_monitor, label_dict, last_update_time), showvalue=False, length=300)
@@ -96,7 +89,6 @@ def create_window():
         label = tk.Label(window, text=str(current_brightness), font=("Courier", 10), width=5, anchor="w")
         label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
         label_dict['second'] = label
-
 
 
     # Set the initial transparency
