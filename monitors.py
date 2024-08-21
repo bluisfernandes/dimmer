@@ -73,33 +73,34 @@ class MonitorInt():
         # queues, jobs and workers to threads
         self.queue = Jobs(1)
         self.thread = None
-
-        self.read_actual_brightness()
     
     def _convert_int_to_float(self, value):
         range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
         target_vals = [0, 1.0]
-        return float(np.interp(value, range_vals, target_vals))
+        res = float(np.interp(value, range_vals, target_vals))
+        return res
     
     def _convert_float_to_int(self, value):
         range_vals = [0, 1.0]
         target_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
-        return int(np.interp(value, range_vals, target_vals))
+        return round(np.interp(value, range_vals, target_vals))
 
     # Read current brightness from the system, updates actual_brightness_read and float
     def read_actual_brightness(self, actual=False):
+        self.actual_brightness_read = self._get_command()
+        self.actual_brightness_1 = self._convert_int_to_float(self.actual_brightness_read)
+        self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
+        return self.actual_brightness_read if actual else self.actual_brightness_1
+
+    def _get_command(self):
         try:
             with open(config.ACTUAL_BRIGHTNESS_PATH, "r") as f:
                 content = f.read()
                 if content.strip():
-                    val = int(float(content.strip()))
-                    self.actual_brightness_read = int(val)
-                    self.actual_brightness_1 = self._convert_int_to_float(val)
-                    self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
-                    return self.actual_brightness_read if actual else self.actual_brightness_1
+                    return int(content.strip())
 
         except FileNotFoundError:
-            return self.MAX_VALUE if actual else 1.0  
+            return None
 
 
     # Command to set brightness
@@ -143,6 +144,7 @@ class MonitorInt():
             print(f"\tset {value} to {self.type}")
     
 
+
 class MonitorExt(MonitorInt):
     def __init__(self, type='external', name='ddcutil'):
         super().__init__()
@@ -152,26 +154,23 @@ class MonitorExt(MonitorInt):
         self.MIN_VALUE_BRIGHTNESS = 0
         self.INTERVAL = 1
 
-
-    # Read current brightness from the system, updates actual_brightness_read and float
-    def read_actual_brightness(self, actual=False):
+    
+    def _get_command(self):
         try:
-            # Execute the ddcutilcommand to get the current brightness
+             # Execute the ddcutil command to get the current brightness
             command_list = "ddcutil --display 1 getvcp 10".split()
             result = subprocess.run(command_list, capture_output=True, text=True, check=True)
             val = None
             for line in result.stdout.splitlines():
                 if 'Brightness' in line:
                     parts = line.split('=')
-                    val = parts[1].split(',')[0].strip()
+                    val = int(parts[1].split(',')[0].strip())
                     break
-            self.actual_brightness_read = int(val)
-            self.actual_brightness_1 = self._convert_int_to_float(val)
-            return self.actual_brightness_read if actual else self.actual_brightness_1
+            return val
 
         except subprocess.CalledProcessError as e:
             print(f"Error reading brightness: {e}")
-            self.MAX_VALUE if actual else 1.0  
+            return None
     
 
     def _set_command(self, value):
