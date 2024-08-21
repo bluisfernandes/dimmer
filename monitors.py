@@ -2,6 +2,9 @@ import numpy as np
 import time
 import subprocess
 from configs import config
+import threading
+from queue import Jobs
+
 
 class MonitorInt():
     def __init__(self, type='internal'):
@@ -11,7 +14,7 @@ class MonitorInt():
         self.MIN_VALUE_BRIGHTNESS = 1200
         self.INTERVAL = 0.001
         self.changed = False
-        
+                
         # Value and time 
         self.actual_brightness_read = None
         self.actual_brightness_read_time = None
@@ -21,6 +24,10 @@ class MonitorInt():
         # reference, brightness [0,1]
         self.actual_brightness_1 = None
         self.brightness_last_set = None
+
+        # queues, jobs and workers to threads
+        self.queue = Jobs(1)
+        self.thread = None
 
 
     # Read current brightness from the system, updates actual_brightness_read and float
@@ -79,6 +86,23 @@ class MonitorInt():
         # else:
         #     print('Wait', self. actual_brightness_read_time - self.old_brightness_read_time, 's.')
 
+
+    def worker(self):
+        while True: 
+            value = self.queue.get()
+            if value is None:
+                break
+            self.on_set(value)
+            print(f"\tset {value} to {self.type}")
+    
+
+    def put_and_run(self, value):
+        self.queue.put(value)
+
+        if not self.thread or not self.thread.is_alive():
+            self.thread = threading.Thread(target=self.worker, args=())
+            self.thread.start()
+            print(f"created new thread for {value}")
 
 
 class MonitorExt(MonitorInt):
