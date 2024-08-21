@@ -16,32 +16,41 @@ class MonitorInt():
         self.changed = False
                 
         # Value and time 
-        self.actual_brightness_read = None
-        self.actual_brightness_read_time = None
+        self.actual_brightness_read_time = None # DELETE
         self.old_brightness_read = None
-        self.old_brightness_read_time = time.time()
+        self.old_brightness_read_time = time.time() # DELETE
 
         # reference, brightness [0,1]
+        self.actual_brightness_read = None
         self.actual_brightness_1 = None
-        self.brightness_last_set = None
+        self.actual_brightness_100 = None
 
         # queues, jobs and workers to threads
         self.queue = Jobs(1)
         self.thread = None
 
+        self.read_actual_brightness()
+    
+    def _convert_int_to_float(self, value):
+        range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
+        target_vals = [0, 1.0]
+        return float(np.interp(value, range_vals, target_vals))
+    
+    def _convert_float_to_int(self, value):
+        range_vals = [0, 1.0]
+        target_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
+        return int(np.interp(value, range_vals, target_vals))
 
     # Read current brightness from the system, updates actual_brightness_read and float
     def read_actual_brightness(self, actual=False):
-        range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
-        target_vals = [0, 1.0]
         try:
             with open(config.ACTUAL_BRIGHTNESS_PATH, "r") as f:
                 content = f.read()
                 if content.strip():
                     val = int(float(content.strip()))
                     self.actual_brightness_read = int(val)
-                    self.actual_brightness_1 = float(np.interp(val, range_vals, target_vals))
-                    print(self.actual_brightness_read, val, range_vals, target_vals)
+                    self.actual_brightness_1 = self._convert_int_to_float(val)
+                    self.actual_brightness_100 = int(self.actual_brightness_1 * 100)
                     return self.actual_brightness_read if actual else self.actual_brightness_1
 
         except FileNotFoundError:
@@ -57,9 +66,7 @@ class MonitorInt():
     # Sets brightness and updates variable value
     def set_brightness(self, value):
         if isinstance(value, float) and 0.0 <= value <= 1.0:
-            target_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
-            range_vals= [0.0, 1.0]
-            value = int(np.interp(value, range_vals, target_vals))
+            value = self._convert_float_to_int(value)
         if not self.MIN_VALUE_BRIGHTNESS <= value <= self.MAX_VALUE_BRIGHTNESS:
             print(f"Value out of bounds: {self.MIN_VALUE_BRIGHTNESS} <= {value=}' <= {self.MAX_VALUE_BRIGHTNESS}")
             return
@@ -103,8 +110,6 @@ class MonitorExt(MonitorInt):
 
     # Read current brightness from the system, updates actual_brightness_read and float
     def read_actual_brightness(self, actual=False):
-        range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
-        target_vals = [0, 1.0]
         try:
             # Execute the ddcutilcommand to get the current brightness
             command_list = "ddcutil --display 1 getvcp 10".split()
@@ -116,8 +121,7 @@ class MonitorExt(MonitorInt):
                     val = parts[1].split(',')[0].strip()
                     break
             self.actual_brightness_read = int(val)
-            self.actual_brightness_1 = int(np.interp(val, range_vals, target_vals))
-            print(self.actual_brightness_read, val, range_vals, target_vals)
+            self.actual_brightness_1 = self._convert_int_to_float(val)
             return self.actual_brightness_read if actual else self.actual_brightness_1
 
         except subprocess.CalledProcessError as e:
