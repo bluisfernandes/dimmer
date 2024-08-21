@@ -102,13 +102,11 @@ class MonitorInt():
         except FileNotFoundError:
             return None
 
-
     # Command to set brightness
     def _set_command(self, value):
         command_list = f"brightnessctl set {value}".split()
         return command_list
     
-
     # Sets brightness and updates variable value
     def set_brightness(self, value):
         if isinstance(value, float) and 0.0 <= value <= 1.0:
@@ -127,14 +125,12 @@ class MonitorInt():
         self.actual_brightness_1 = self._convert_int_to_float(value)
         self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
 
-
     # Checks if there are changes in reading
     def _check_changes(self):
         if self.changed == False and self.old_brightness_read != self.actual_brightness_read:
             return True
         else:
             return False
-
 
     def _worker(self):
         while True: 
@@ -144,8 +140,7 @@ class MonitorInt():
             command_list = self._set_command(value)
             subprocess.run(command_list, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print(command_list) 
-            print(f"\tset {value} to {self.type}")
-    
+            print(f"\tset {value} to {self.type}")  
 
 
 class MonitorExt(MonitorInt):
@@ -157,10 +152,9 @@ class MonitorExt(MonitorInt):
         self.MIN_VALUE_BRIGHTNESS = 0
         self.INTERVAL = 1
 
-    
     def _get_command(self):
         try:
-             # Execute the ddcutil command to get the current brightness
+            # Get the current brightness using rhe ddcutil command
             command_list = "ddcutil --display 1 getvcp 10".split()
             result = subprocess.run(command_list, capture_output=True, text=True, check=True)
             val = None
@@ -170,12 +164,10 @@ class MonitorExt(MonitorInt):
                     val = int(parts[1].split(',')[0].strip())
                     break
             return val
-
         except subprocess.CalledProcessError as e:
             print(f"Error reading brightness: {e}")
             return None
     
-
     def _set_command(self, value):
         command_list = f"ddcutil --display 1 setvcp 10 {value}".split()
         return command_list
