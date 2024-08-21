@@ -33,7 +33,6 @@ class Jobs:
                 if self.queue:
                     break
 
-
         if self.n_queue() == 0 and timeout != 0:
             get_timeout(timeout)
 
