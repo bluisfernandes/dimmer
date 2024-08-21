@@ -74,6 +74,9 @@ class MonitorInt():
         self.queue = Jobs(1)
         self.thread = None
     
+    def __repr__(self):
+        return f"Class Monitor: type={self.type}, command '{self.command}'"
+    
     def _convert_int_to_float(self, value):
         range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
         target_vals = [0, 1.0]
