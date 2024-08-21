@@ -88,7 +88,7 @@ class MonitorInt():
         return round(np.interp(value, range_vals, target_vals))
 
     # Read current brightness from the system, updates actual_brightness_read and float
-    def read_actual_brightness(self, actual=False):
+    def read(self, actual=False):
         self.actual_brightness_read = self._get_command()
         self.actual_brightness_1 = self._convert_int_to_float(self.actual_brightness_read)
         self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
@@ -110,7 +110,7 @@ class MonitorInt():
         return command_list
     
     # Sets brightness and updates variable value
-    def set_brightness(self, value):
+    def set(self, value):
         if isinstance(value, float) and 0.0 <= value <= 1.0:
             value = self._convert_float_to_int(value)
         if not self.MIN_VALUE_BRIGHTNESS <= value <= self.MAX_VALUE_BRIGHTNESS:
