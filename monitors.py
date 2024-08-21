@@ -42,7 +42,6 @@ class Jobs:
             get_timeout(timeout)
 
         if self.n_queue():
-            # print(self.n_queue())
             job = self.queue.pop()
             self.update_pending()
             return job
@@ -142,8 +141,6 @@ class MonitorInt():
                 break
             command_list = self._set_command(value)
             subprocess.run(command_list, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print(command_list) 
-            print(f"\tset {value} to {self.type}")  
 
 
 class MonitorExt(MonitorInt):
