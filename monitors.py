@@ -95,7 +95,7 @@ class MonitorInt():
                     val = int(float(content.strip()))
                     self.actual_brightness_read = int(val)
                     self.actual_brightness_1 = self._convert_int_to_float(val)
-                    self.actual_brightness_100 = int(self.actual_brightness_1 * 100)
+                    self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
                     return self.actual_brightness_read if actual else self.actual_brightness_1
 
         except FileNotFoundError:
