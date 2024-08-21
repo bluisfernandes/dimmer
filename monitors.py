@@ -123,6 +123,9 @@ class MonitorInt():
             self.thread = threading.Thread(target=self._worker, args=())
             self.thread.start()
             print(f"created new thread for {value}")
+        
+        self.actual_brightness_1 = self._convert_int_to_float(value)
+        self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
 
 
     # Checks if there are changes in reading
