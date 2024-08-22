@@ -1,5 +1,8 @@
 from monitors import MonitorInt, MonitorExt
 import subprocess
+import customtkinter
+
+customtkinter.set_default_color_theme("blue")
 
 class Dimmer():
     def __init__(self):
@@ -51,7 +54,7 @@ class Dimmer():
                 monitor.set(value)
 
 
-class Gui(tk.Tk):
+class Gui(customtkinter.CTk):
     def __init__(self, dimmer):
         super().__init__()
         self.dimmer = dimmer
@@ -66,27 +69,24 @@ class Gui(tk.Tk):
         frame2.grid(row=1, column=0, padx=5, pady=5)
 
 
-class ControlGui(ttk.Frame):
+class ControlGui(customtkinter.CTkFrame):
     def __init__(self, parent, monitor):
         super().__init__(parent)
 
-        self.name = ttk.Label(self, text=monitor.type, width=10, font=("Courier", 11), anchor='center')
+        self.name =customtkinter.CTkLabel(self, text=monitor.type, anchor='center')
         self.name.grid(row=0, column=0)
 
-        self.label = ttk.Label(self, text="name", width=5, font=("Courier", 11), anchor="center")
+        self.label = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
         self.label.grid(row=0, column=1)
 
-        self.scale = ttk.Scale(self, to=100, command= lambda val: self.on_slide(val, monitor), length=150,cursor='dot')
+        self.scale = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitor), number_of_steps=100)
         self.scale.set(0)
         self.scale.grid(row=0, column=2)
 
-        self.switch = ttk.Checkbutton(self)
-        self.switch.grid(row=1)
-
     def on_slide(self, value, monitor):
-        value = int(float(value))
+        value = int(value)
         print(value, type(value), monitor.type)
-        self.label.config(text=value)
+        self.label.configure(text=value)
 
 
 d = Dimmer()
