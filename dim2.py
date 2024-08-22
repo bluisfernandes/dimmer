@@ -62,32 +62,34 @@ class Gui(customtkinter.CTk):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=3)
 
-        self.frame = ControlGui(self, self.dimmer.monitors, "backlight")
+        self.frame = ControlGui(self, self.dimmer, "backlight")
         self.frame.grid(row=0, column=0, padx=5, pady=5)
 
-        self.frame2 = ControlGui(self, self.dimmer.monitors, "software")
+        self.frame2 = ControlGui(self, self.dimmer, "software")
         self.frame2.grid(row=1, column=0, padx=5, pady=5)
 
 
 class ControlGui(customtkinter.CTkFrame):
-    def __init__(self, parent, monitors, function):
+    def __init__(self, parent, dimmer, function):
         super().__init__(parent)
+        self.dimmer = dimmer
+        self.monitors = dimmer.monitors
         self.link = False
         self.monitor2_connected = True
         self.monitor2_created = False
 
         if self.monitor2_connected:
-            self.monitor2_create(monitors)
+            self.monitor2_create(self.monitors)
 
         # Monitor 1
-        if 'intel' in monitors.keys():
-            self.name1 =customtkinter.CTkLabel(self, text=monitors['intel'].type, anchor='center')
+        if 'intel' in self.monitors.keys():
+            self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, anchor='center')
             self.name1.grid(row=0, column=0)
 
             self.label1 = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
             self.label1.grid(row=0, column=1)
 
-            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors['intel'], self.label1), number_of_steps=100)
+            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors['intel'], self.label1), number_of_steps=100)
             self.scale1.set(0)
             self.scale1.grid(row=0, column=2)
 
@@ -136,8 +138,10 @@ class ControlGui(customtkinter.CTkFrame):
             self.label1.configure(text=value)
             self.label2.configure(text=value)
             self.scale2.set(value)
+            self.dimmer.slider_set(value/100)
         else:
             label.configure(text=value)
+            self.dimmer.slider_set(value/100, monitor)
     
     def toggle_link(self):
         self.link = not self.link
@@ -146,6 +150,7 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale2.configure(state='disabled', button_color = ('gray40', '#AAB0B5'), progress_color='transparent')
             self.scale2.set(self.scale1.get())
             self.label2.grid_forget()
+            self.dimmer.link_update()
         else:
             self.scale2.configure(state='normal', button_color=('#3B8ED0', '#1F6AA5'), progress_color=('#3B8ED0', '#1F6AA5'))
             self.label2.grid(row=1, column=1)
