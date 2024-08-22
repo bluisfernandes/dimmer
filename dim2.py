@@ -1,90 +1,51 @@
 from monitors import MonitorInt, MonitorExt
-from queue import Jobs
-import threading
-import time
+import subprocess
 
 class Dimmer():
     def __init__(self):
         self.title='Control Brightness'
-        self.monitors = []
-
-
-
-
-a = MonitorInt()
-a.read_actual_brightness()
-
-b = MonitorExt()
-b.read_actual_brightness()
-print("##")
-# for i in range(10):
-#     a.on_set(1200 + i)
-
-# print("##")
-# for i in range(2):
-#     b.on_set(50 + i)
-
-# a.on_set(1200)
-
-class Worker:
-    def __init__(self, monitor, queue):
-        self.monitor = monitor
-        self.queue = queue
-        self.is_alive = False
-        self.thread = None
-
-    def worker(self):
-        while True: 
-            value = self.queue.get()
-            if value is None:
-                break
-            self.monitor.on_set(value)
-            print(f"\tset {value} to {self.monitor.type}")
-
+        self.monitors = {}
+        self.linked = True
+        self.update_connection()
     
-    def put_and_run(self, value):
-        self.queue.put(value)
+    def __repr__(self):
+         return f"ClassDimmer: {self.title}, monitors: {self.monitors}"
+    
+    def update_connection(self):
+        self._check_connection_primary()
+        self._check_connection_second()
 
-        if not self.thread or not self.thread.is_alive():
-            self.thread = threading.Thread(target=self.worker, args=())
-            self.thread.start()
-            print(f"created new thread for {value}")
-        # else:
-            # print(f"Add {value} to the existing one")
+    def _check_connection_primary(self, display_name='intel'):
+        command_list = "brightnessctl -l |grep "'backlight'"".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
+        if display_name in result.stdout:
+             if display_name not in self.monitors:
+                self.monitors[display_name] = MonitorInt()
+        elif display_name in self.monitors:
+            del self.monitors[display_name]
+    
+    def _check_connection_second(self, display_name='Display 1'):
+        command_list = "ddcutil detect".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
+        name = str.lower(display_name)
+        if display_name in result.stdout:
+            if name not in self.monitors:
+                self.monitors[name] = MonitorExt()
+        elif name in self.monitors:
+                del self.monitors[name]
+    
+    def link_update(self):
+        if self.linked and len(self.monitors) >= 2:
+            val=self.monitors['intel'].read()
+            print(round(val * 100), end='')
+            if self.monitors['display 1'].actual_brightness_100 != round(val * 100):
+                self.monitors['display 1'].set(val)
 
-
-
-q = Jobs(1)
-int = Worker(b, q)
-for i in range(10):
-    int.put_and_run(10 * i)
-    time.sleep(2)
-
-int.thread.join()
-
-
-
-
-# def worker(a, q):
-#     while True: 
-#         value = q.get()
-#         if value is None:
-#             break
-#         a.on_set(value)
-#         print(f"set {value} to {a.type}")
-
-
-# q = Jobs(1)
-# for i in range(10):
-#     q.put(i*10)
-
-# t = threading.Thread(target=worker, args=(b, q))
-# t.start()
-
-# for i in range(100):
-#     time.sleep(2)
-#     print(f"add {i}")
-#     q.put(i)
-
-# for i in range(1188):
-#     q.put(120000-i*100)
+    def slider_set(self, value, monitor=None):
+        if monitor:
+            if isinstance(monitor,str):
+                monitor = self.monitors.get(monitor)
+            monitor.set(value)
+        elif self.linked is True:
+            for _, monitor in self.monitors.items():
+                monitor.set(value)
