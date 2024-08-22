@@ -62,31 +62,70 @@ class Gui(customtkinter.CTk):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=3)
 
-        frame = ControlGui(self, monitor=self.dimmer.monitors['intel'])
-        frame.grid(row=0, column=0, padx=5, pady=5)
+        self.frame = ControlGui(self, self.dimmer.monitors['intel'], "backlight")
+        self.frame.grid(row=0, column=0, padx=5, pady=5)
 
-        frame2 = ControlGui(self, monitor=self.dimmer.monitors['display 1'])
-        frame2.grid(row=1, column=0, padx=5, pady=5)
+        self.frame2 = ControlGui(self, self.dimmer.monitors['display 1'], "software")
+        self.frame2.grid(row=1, column=0, padx=5, pady=5)
 
 
 class ControlGui(customtkinter.CTkFrame):
-    def __init__(self, parent, monitor):
+    def __init__(self, parent, monitors, function):
         super().__init__(parent)
+        self.link = False
 
-        self.name =customtkinter.CTkLabel(self, text=monitor.type, anchor='center')
-        self.name.grid(row=0, column=0)
+        # Monitor 1
+        self.name1 =customtkinter.CTkLabel(self, text=monitors.type, anchor='center')
+        self.name1.grid(row=0, column=0)
 
-        self.label = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
-        self.label.grid(row=0, column=1)
+        self.label1 = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
+        self.label1.grid(row=0, column=1)
 
-        self.scale = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitor), number_of_steps=100)
-        self.scale.set(0)
-        self.scale.grid(row=0, column=2)
+        self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors, self.label1), number_of_steps=100)
+        self.scale1.set(0)
+        self.scale1.grid(row=0, column=2)
 
-    def on_slide(self, value, monitor):
+        # Monitor 2
+        self.name2 =customtkinter.CTkLabel(self, text=monitors.type, anchor='center')
+        self.name2.grid(row=1, column=0)
+
+        self.label2 = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
+        self.label2.grid(row=1, column=1)
+
+        self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors, self.label2), number_of_steps=100)
+        self.scale2.set(0)
+        self.scale2.grid(row=1, column=2)
+
+        # Link monitors
+        self.switch = customtkinter.CTkSwitch(self, command=self.toggle, text="join")
+        self.switch.grid(row=1, column=3)
+
+        # Function name
+        self.function = customtkinter.CTkLabel(self, text=function, width=40, anchor="center")
+        self.function.grid(row=0, column=3)
+
+
+    def on_slide(self, value, monitor, label):
         value = int(value)
         print(value, type(value), monitor.type)
-        self.label.configure(text=value)
+        if self.link:
+            self.label1.configure(text=value)
+            self.label2.configure(text=value)
+            self.scale2.set(value)
+        else:
+            label.configure(text=value)
+    
+    def toggle(self):
+        self.link = not self.link
+        print(self.link)
+        if self.link:
+            self.scale2.configure(state='disabled', button_color = ('gray40', '#AAB0B5'), progress_color='transparent')
+            self.scale2.set(self.scale1.get())
+            self.label2.grid_forget()
+        else:
+            self.scale2.configure(state='normal', button_color=('#3B8ED0', '#1F6AA5'), progress_color=('#3B8ED0', '#1F6AA5'))
+            self.label2.grid(row=1, column=1)
+        
 
 
 d = Dimmer()
