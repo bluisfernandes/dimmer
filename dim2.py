@@ -49,3 +49,46 @@ class Dimmer():
         elif self.linked is True:
             for _, monitor in self.monitors.items():
                 monitor.set(value)
+
+
+class Gui(tk.Tk):
+    def __init__(self, dimmer):
+        super().__init__()
+        self.dimmer = dimmer
+        self.title('Brightness Control')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=3)
+
+        frame = ControlGui(self, monitor=self.dimmer.monitors['intel'])
+        frame.grid(row=0, column=0, padx=5, pady=5)
+
+        frame2 = ControlGui(self, monitor=self.dimmer.monitors['display 1'])
+        frame2.grid(row=1, column=0, padx=5, pady=5)
+
+
+class ControlGui(ttk.Frame):
+    def __init__(self, parent, monitor):
+        super().__init__(parent)
+
+        self.name = ttk.Label(self, text=monitor.type, width=10, font=("Courier", 11), anchor='center')
+        self.name.grid(row=0, column=0)
+
+        self.label = ttk.Label(self, text="name", width=5, font=("Courier", 11), anchor="center")
+        self.label.grid(row=0, column=1)
+
+        self.scale = ttk.Scale(self, to=100, command= lambda val: self.on_slide(val, monitor), length=150,cursor='dot')
+        self.scale.set(0)
+        self.scale.grid(row=0, column=2)
+
+        self.switch = ttk.Checkbutton(self)
+        self.switch.grid(row=1)
+
+    def on_slide(self, value, monitor):
+        value = int(float(value))
+        print(value, type(value), monitor.type)
+        self.label.config(text=value)
+
+
+d = Dimmer()
+gui = Gui(d)
+gui.mainloop()
