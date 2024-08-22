@@ -73,6 +73,11 @@ class ControlGui(customtkinter.CTkFrame):
     def __init__(self, parent, monitors, function):
         super().__init__(parent)
         self.link = False
+        self.monitor2_connected = True
+        self.monitor2_created = False
+
+        if self.monitor2_connected:
+            self.monitor2_create(monitors)
 
         # Monitor 1
         if 'intel' in monitors.keys():
@@ -86,8 +91,18 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale1.set(0)
             self.scale1.grid(row=0, column=2)
 
+        # Function name
+        self.function = customtkinter.CTkLabel(self, text=function, width=40, anchor="center")
+        self.function.grid(row=0, column=3)
+
+        self.switch2 = customtkinter.CTkSwitch(self, command=self.toggle_monitor2_connection, text="Connected")
+        self.switch2.grid(row=1, column=4)
+        
+
+    def monitor2_create(self, monitors):
         # Monitor 2
         if 'display 1' in monitors.keys():
+            self.monitor2_created = True
             self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, anchor='center')
             self.name2.grid(row=1, column=0)
 
@@ -99,25 +114,32 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale2.grid(row=1, column=2)
 
             # Link monitors
-            self.switch = customtkinter.CTkSwitch(self, command=self.toggle, text="join")
+            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, text="join")
             self.switch.grid(row=1, column=3)
+    
+    def monitor2_hide(self):
+        self.name2.grid_forget()
+        self.label2.grid_forget()
+        self.scale2.grid_forget()
+        self.switch.grid_forget()
 
-        # Function name
-        self.function = customtkinter.CTkLabel(self, text=function, width=40, anchor="center")
-        self.function.grid(row=0, column=3)
-
+    def monitor2_show(self):
+        self.name2.grid(row=1, column=0)
+        self.label2.grid(row=1, column=1)
+        self.scale2.grid(row=1, column=2)
+        self.switch.grid(row=1, column=3)
 
     def on_slide(self, value, monitor, label):
         value = int(value)
         print(value, type(value), monitor.type)
-        if self.link:
+        if self.link and self.monitor2_connected:
             self.label1.configure(text=value)
             self.label2.configure(text=value)
             self.scale2.set(value)
         else:
             label.configure(text=value)
     
-    def toggle(self):
+    def toggle_link(self):
         self.link = not self.link
         print(self.link)
         if self.link:
@@ -127,7 +149,16 @@ class ControlGui(customtkinter.CTkFrame):
         else:
             self.scale2.configure(state='normal', button_color=('#3B8ED0', '#1F6AA5'), progress_color=('#3B8ED0', '#1F6AA5'))
             self.label2.grid(row=1, column=1)
-        
+    
+    def toggle_monitor2_connection(self):
+        if self.monitor2_created:
+            self.monitor2_connected = not self.monitor2_connected
+            print(self.monitor2_connected)
+            if self.monitor2_connected:
+                self.monitor2_show()
+            else:
+                self.monitor2_hide()
+           
 
 
 d = Dimmer()
