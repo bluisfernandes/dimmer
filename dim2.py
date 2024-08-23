@@ -11,6 +11,7 @@ class Dimmer():
         self.linked = True
         self.update_connection()
         self.brightnesses = {}
+        self._initialize_brightness()
         
     def __repr__(self):
          return f"ClassDimmer: {self.title}, monitors: {self.monitors}"
@@ -38,6 +39,10 @@ class Dimmer():
         elif name in self.monitors:
                 del self.monitors[name]
     
+    def _initialize_brightness(self):
+        value = round(self.monitors['intel'].read() * 100)
+        self.brightnesses['intel'] = value
+
     def link_update(self):
         if self.linked and len(self.monitors) >= 2:
             val=self.monitors['intel'].read()
