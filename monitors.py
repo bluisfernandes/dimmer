@@ -51,10 +51,10 @@ class Jobs:
 
 
 class MonitorInt():
-    def __init__(self, name, type='internal', command='brightnessctl' ):
+    def __init__(self, name, type='internal', set_command='f"brightnessctl set {value}"' ):
         self.type = type
         self.name = name
-        self.command = command
+        self.set_command = set_command
         self.MAX_VALUE_BRIGHTNESS = 120000
         self.MIN_VALUE_BRIGHTNESS = 1200
         self.INTERVAL = 0.001
@@ -108,7 +108,8 @@ class MonitorInt():
 
     # Command to set brightness
     def _set_command(self, value):
-        command_list = f"brightnessctl set {value}".split()
+        command = eval(self.set_command)
+        command_list = command.split()
         return command_list
     
     # Sets brightness and updates variable value
@@ -146,10 +147,8 @@ class MonitorInt():
 
 
 class MonitorExt(MonitorInt):
-    def __init__(self, name, type='external', command='ddcutil'):
-        super().__init__(name, type='external', command='ddcutil')
-        self.type = type
-        self.command = command
+    def __init__(self, name, type='external', set_command='f"ddcutil --display 1 setvcp 10 {value}"'):
+        super().__init__(name, type=type, set_command=set_command)
         self.MAX_VALUE_BRIGHTNESS = 100
         self.MIN_VALUE_BRIGHTNESS = 0
         self.INTERVAL = 1
@@ -170,7 +169,3 @@ class MonitorExt(MonitorInt):
         except subprocess.CalledProcessError as e:
             print(f"Error reading brightness: {e}")
             return None
-    
-    def _set_command(self, value):
-        command_list = f"ddcutil --display 1 setvcp 10 {value}".split()
-        return command_list
