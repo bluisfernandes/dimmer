@@ -197,20 +197,14 @@ class ControlGui(customtkinter.CTkFrame):
     
     def update_remote_values(self, time=0):
         value = self.dimmer.check_if_changed()
-        if value:
+        if value is not None:
             self.on_slide(value, self.monitors['intel'], self.label1)
             self.scale1.set(value)
-            print("foi")
-            self.after(time, lambda: gui.frame.update_remote_values(time=500))
-        else:
-            print("no")
-            if time:
-                self.after(time, lambda: gui.frame.update_remote_values(time=5000))
+        self.after(time, lambda: gui.frame.update_remote_values(time=time))
         
            
-
-
 d = Dimmer()
 gui = Gui(d)
-gui.after(3000, lambda: gui.frame.update_remote_values(time=4000))
+# read brightness changes made from computer and updates GUI
+gui.after(3000, lambda: gui.frame.update_remote_values(time=200))
 gui.mainloop()
