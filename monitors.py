@@ -51,9 +51,10 @@ class Jobs:
 
 
 class MonitorInt():
-    def __init__(self, type='internal'):
+    def __init__(self, name, type='internal', command='brightnessctl' ):
         self.type = type
-        self.command = 'brightnessctl'
+        self.name = name
+        self.command = command
         self.MAX_VALUE_BRIGHTNESS = 120000
         self.MIN_VALUE_BRIGHTNESS = 1200
         self.INTERVAL = 0.001
@@ -145,10 +146,10 @@ class MonitorInt():
 
 
 class MonitorExt(MonitorInt):
-    def __init__(self, type='external', name='ddcutil'):
-        super().__init__()
+    def __init__(self, name, type='external', command='ddcutil'):
+        super().__init__(name, type='external', command='ddcutil')
         self.type = type
-        self.command = 'ddcutil'
+        self.command = command
         self.MAX_VALUE_BRIGHTNESS = 100
         self.MIN_VALUE_BRIGHTNESS = 0
         self.INTERVAL = 1

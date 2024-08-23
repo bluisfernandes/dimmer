@@ -10,7 +10,8 @@ class Dimmer():
         self.monitors = {}
         self.linked = True
         self.update_connection()
-    
+        self.brightnesses = {}
+        
     def __repr__(self):
          return f"ClassDimmer: {self.title}, monitors: {self.monitors}"
     
@@ -23,7 +24,7 @@ class Dimmer():
         result = subprocess.run(command_list, capture_output=True, text=True, check=True)
         if display_name in result.stdout:
              if display_name not in self.monitors:
-                self.monitors[display_name] = MonitorInt()
+                self.monitors[display_name] = MonitorInt(display_name)
         elif display_name in self.monitors:
             del self.monitors[display_name]
     
@@ -33,16 +34,18 @@ class Dimmer():
         name = str.lower(display_name)
         if display_name in result.stdout:
             if name not in self.monitors:
-                self.monitors[name] = MonitorExt()
+                self.monitors[name] = MonitorExt(name)
         elif name in self.monitors:
                 del self.monitors[name]
     
     def link_update(self):
         if self.linked and len(self.monitors) >= 2:
             val=self.monitors['intel'].read()
+            self.brightnesses['intel'] = round(val * 100)
             print(round(val * 100), end='')
             if self.monitors['display 1'].actual_brightness_100 != round(val * 100):
                 self.monitors['display 1'].set(val)
+                self.brightnesses['display 1'] = round(val * 100)
             return round(val * 100)
 
     def slider_set(self, value, monitor=None):
@@ -50,9 +53,23 @@ class Dimmer():
             if isinstance(monitor,str):
                 monitor = self.monitors.get(monitor)
             monitor.set(value)
+            self.brightnesses.update({monitor.name :round(value*100)})
         elif self.linked is True:
             for _, monitor in self.monitors.items():
                 monitor.set(value)
+                self.brightnesses.update({monitor.name :value*100})
+    
+    def check_if_changed(self):
+        value = self.monitors['intel'].read()
+        value = round(value * 100)
+        if self.brightnesses['intel'] != value:
+            self.brightnesses['intel'] = value
+            print(value)
+            return value
+        else:
+            return None
+    
+    
 
 
 class Gui(customtkinter.CTk):
