@@ -68,11 +68,12 @@ class MonitorInt():
         self.actual_brightness_read = None
         self.actual_brightness_1 = None
         self.actual_brightness_100 = None
+        self.read()
 
         # queues, jobs and workers to threads
         self.queue = Jobs(1)
         self.thread = None
-    
+
     def __repr__(self):
         return f"Class Monitor: type={self.type}, command '{self.command}'"
     
@@ -151,6 +152,7 @@ class MonitorExt(MonitorInt):
         self.MAX_VALUE_BRIGHTNESS = 100
         self.MIN_VALUE_BRIGHTNESS = 0
         self.INTERVAL = 1
+        self.read()       
 
     def _get_command(self):
         try:
