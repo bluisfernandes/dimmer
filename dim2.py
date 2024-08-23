@@ -43,6 +43,7 @@ class Dimmer():
             print(round(val * 100), end='')
             if self.monitors['display 1'].actual_brightness_100 != round(val * 100):
                 self.monitors['display 1'].set(val)
+            return round(val * 100)
 
     def slider_set(self, value, monitor=None):
         if monitor:
@@ -86,11 +87,13 @@ class ControlGui(customtkinter.CTkFrame):
             self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, anchor='center')
             self.name1.grid(row=0, column=0)
 
-            self.label1 = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
+            initial_value = self.dimmer.monitors['intel'].actual_brightness_100
+
+            self.label1 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label1.grid(row=0, column=1)
 
             self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors['intel'], self.label1), number_of_steps=100)
-            self.scale1.set(0)
+            self.scale1.set(initial_value)
             self.scale1.grid(row=0, column=2)
 
         # Function name
@@ -104,17 +107,20 @@ class ControlGui(customtkinter.CTkFrame):
     def monitor2_create(self, monitors):
         # Monitor 2
         if 'display 1' in monitors.keys():
+
             self.monitor2_created = True
             self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, anchor='center')
             self.name2.grid(row=1, column=0)
 
-            self.label2 = customtkinter.CTkLabel(self, text="0", width=40, anchor="center")
+            initial_value = self.dimmer.monitors['display 1'].actual_brightness_100
+
+            self.label2 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label2.grid(row=1, column=1)
 
             self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors['display 1'], self.label2), number_of_steps=100)
-            self.scale2.set(0)
+            self.scale2.set(initial_value)
             self.scale2.grid(row=1, column=2)
-
+            
             # Link monitors
             self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, text="join")
             self.switch.grid(row=1, column=3)
@@ -138,9 +144,11 @@ class ControlGui(customtkinter.CTkFrame):
             self.label1.configure(text=value)
             self.label2.configure(text=value)
             self.scale2.set(value)
+            # Update brightness of all monitors
             self.dimmer.slider_set(value/100)
         else:
             label.configure(text=value)
+            # Update brightness of one monitors
             self.dimmer.slider_set(value/100, monitor)
     
     def toggle_link(self):
@@ -150,7 +158,8 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale2.configure(state='disabled', button_color = ('gray40', '#AAB0B5'), progress_color='transparent')
             self.scale2.set(self.scale1.get())
             self.label2.grid_forget()
-            self.dimmer.link_update()
+            # update brightness and label
+            self.label2.configure(text=self.dimmer.link_update())
         else:
             self.scale2.configure(state='normal', button_color=('#3B8ED0', '#1F6AA5'), progress_color=('#3B8ED0', '#1F6AA5'))
             self.label2.grid(row=1, column=1)
