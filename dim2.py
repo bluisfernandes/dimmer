@@ -84,7 +84,7 @@ class ControlGui(customtkinter.CTkFrame):
 
         # Monitor 1
         if 'intel' in self.monitors.keys():
-            self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, anchor='center')
+            self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, width=70, anchor='center')
             self.name1.grid(row=0, column=0)
 
             initial_value = self.dimmer.monitors['intel'].actual_brightness_100
@@ -97,7 +97,7 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale1.grid(row=0, column=2)
 
         # Function name
-        self.function = customtkinter.CTkLabel(self, text=function, width=40, anchor="center")
+        self.function = customtkinter.CTkLabel(self, text=function, width=80, anchor="center")
         self.function.grid(row=0, column=3)
 
         self.switch2 = customtkinter.CTkSwitch(self, command=self.toggle_monitor2_connection, text="Connected")
@@ -109,7 +109,7 @@ class ControlGui(customtkinter.CTkFrame):
         if 'display 1' in monitors.keys():
 
             self.monitor2_created = True
-            self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, anchor='center')
+            self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, width=70, anchor='center')
             self.name2.grid(row=1, column=0)
 
             initial_value = self.dimmer.monitors['display 1'].actual_brightness_100
@@ -122,7 +122,7 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale2.grid(row=1, column=2)
             
             # Link monitors
-            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, text="join")
+            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, width=80, text="join")
             self.switch.grid(row=1, column=3)
     
     def monitor2_hide(self):
