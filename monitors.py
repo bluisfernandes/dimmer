@@ -51,7 +51,7 @@ class Jobs:
 
 
 class MonitorInt():
-    def __init__(self, name, type='internal', set_command='f"brightnessctl set {value}"' ):
+    def __init__(self, name='screen1', type='internal', set_command='f"brightnessctl set {value}"' ):
         self.type = type
         self.name = name
         self.set_command = set_command
@@ -76,7 +76,7 @@ class MonitorInt():
         self.thread = None
 
     def __repr__(self):
-        return f"Class Monitor: type={self.type}, command '{self.command}'"
+        return f"Class Monitor: type={self.type}, command '{self.set_command}'"
     
     def _convert_int_to_float(self, value):
         range_vals = [self.MIN_VALUE_BRIGHTNESS, self.MAX_VALUE_BRIGHTNESS]
@@ -114,7 +114,8 @@ class MonitorInt():
     
     # Sets brightness and updates variable value
     def set(self, value):
-        if isinstance(value, float) and 0.0 <= value <= 1.0:
+        
+        if isinstance(value, float) and 0.0 <= value <= 1.0 and isinstance(self.MAX_VALUE_BRIGHTNESS, int):
             value = self._convert_float_to_int(value)
         if not self.MIN_VALUE_BRIGHTNESS <= value <= self.MAX_VALUE_BRIGHTNESS:
             print(f"Value out of bounds: {self.MIN_VALUE_BRIGHTNESS} <= {value=}' <= {self.MAX_VALUE_BRIGHTNESS}")
