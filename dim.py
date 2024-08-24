@@ -1,205 +1,210 @@
-import tkinter as tk
-import threading
-from configs import config
-from PIL import Image, ImageDraw
-from pystray import MenuItem as item
-import pystray
-import math
-from utils import (read_actual_brightness, 
-                   read_current_brightness_ddcutil, 
-                   get_connected_monitors,
-                   set_brightness_ddcutil,
-                   set_brightness_brightnessctl,
-                   on_slider_change,
-                   update_brightness_main
-                   )
+from monitors import MonitorInt, MonitorExt
+import subprocess
+import customtkinter
 
-# Tkinter window (GUI)
-class MyApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Brightness Control")
-        self.is_open = True
+customtkinter.set_default_color_theme("blue")
 
-    def open(self):
-        if not self.is_open:
-            self.root.deiconify()
-            self.is_open = True
-
-    def close(self):
-        if self.is_open:
-            self.root.withdraw()
-            self.is_open = False
-
-# Callback functions for tray menu
-def on_open(icon, item):
-    app.open()
-
-def on_close(icon, item):
-    app.close()
-
-def on_quit(icon, item):
-    # Open the app GUI to avoid runtimeError with thread.
-    app.open()
-    icon.stop()
-    window.quit()
-
-def on_refresh(icon,item):
-    import os
-    import sys
-    import subprocess
-    python = sys.executable or 'python3'
-    on_quit(icon, None)
-    subprocess.Popen([python] + sys.argv)
-    sys.exit()
-
-# Setup tray menu
-menu = (
-    item('Open', on_open),
-    item('Hide', on_close),
-    item('Refresh', on_refresh),
-    item('Quit', on_quit)
-)
-
-# Create the brightness GUI
-def create_window():
-    global window, app
-    # Throttle variables
-    last_update_time = {}    
-    second_monitor = None
-    connected_monitors = get_connected_monitors()
-
-    # Create the main Tkinter window
-    window = tk.Tk()
-    app = MyApp(window)
-    app.close()
-    window.protocol("WM_DELETE_WINDOW", app.close)
-    # window.title("Brightness Control")
-
-    # Set a fixed size for the window
-    window.geometry("350x180")
-    
-    # Prevent the window from being resized
-    window.resizable(False, False)
-    window.attributes("-topmost", True)
-
-    # Initialize Tkinter variables 
-    link_sliders = tk.BooleanVar(value=config.LINK_SLIDERS)
-    link_sliders2 = tk.BooleanVar(value=config.LINK_SLIDERS2)
-    label_dict = {}
-    sliders = []
-    sliders_hardware = []
-    initial_brightness = config.MAX_BRIGHTNESS * 100
-
-    # Scales via software
-    row = 0
-    for monitor in connected_monitors:
-        tk.Label(window, text=f"{monitor} Brightness").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+class Dimmer():
+    def __init__(self):
+        self.title='Control Brightness'
+        self.monitors = {}
+        self.linked = True
+        self.update_connection()
+        self.brightnesses = {}
+        self._initialize_brightness()
         
-        slider = tk.Scale(window, from_=config.LINK_SLIDERS * 100, to=100, orient="horizontal", command=lambda val, m=monitor: on_slider_change(val,last_update_time, label_dict, sliders, link_sliders, m), showvalue=False, length=300)
+    def __repr__(self):
+         return f"ClassDimmer: {self.title}, monitors: {self.monitors}"
+    
+    def update_connection(self):
+        self._check_connection_primary()
+        self._check_connection_second()
+
+    def _check_connection_primary(self, display_name='intel'):
+        command_list = "brightnessctl -l |grep "'backlight'"".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
+        if display_name in result.stdout:
+             if display_name not in self.monitors:
+                self.monitors[display_name] = MonitorInt(display_name)
+        elif display_name in self.monitors:
+            del self.monitors[display_name]
+    
+    def _check_connection_second(self, display_name='Display 1'):
+        command_list = "ddcutil detect".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
+        name = str.lower(display_name)
+        if display_name in result.stdout:
+            if name not in self.monitors:
+                self.monitors[name] = MonitorExt(name)
+        elif name in self.monitors:
+                del self.monitors[name]
+    
+    def _initialize_brightness(self):
+        value = round(self.monitors['intel'].read() * 100)
+        self.brightnesses['intel'] = value
+
+    def link_update(self):
+        if self.linked and len(self.monitors) >= 2:
+            val=self.monitors['intel'].read()
+            self.brightnesses['intel'] = round(val * 100)
+            print(round(val * 100), end='')
+            if self.monitors['display 1'].actual_brightness_100 != round(val * 100):
+                self.monitors['display 1'].set(val)
+                self.brightnesses['display 1'] = round(val * 100)
+            return round(val * 100)
+
+    def slider_set(self, value, monitor=None):
+        if monitor:
+            if isinstance(monitor,str):
+                monitor = self.monitors.get(monitor)
+            monitor.set(value)
+            self.brightnesses.update({monitor.name :round(value*100)})
+        elif self.linked is True:
+            for _, monitor in self.monitors.items():
+                monitor.set(value)
+                self.brightnesses.update({monitor.name :value*100})
+    
+    def check_if_changed(self):
+        value = self.monitors['intel'].read()
+        value = round(value * 100)
+        if self.brightnesses['intel'] != value:
+            self.brightnesses['intel'] = value
+            print(value)
+            return value
+        else:
+            return None
+    
+    
+
+
+class Gui(customtkinter.CTk):
+    def __init__(self, dimmer):
+        super().__init__()
+        self.dimmer = dimmer
+        self.title('Brightness Control')
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=3)
+
+        self.frame = ControlGui(self, self.dimmer, "backlight")
+        self.frame.grid(row=0, column=0, padx=5, pady=5)
+
+        self.frame2 = ControlGui(self, self.dimmer, "software")
+        self.frame2.grid(row=1, column=0, padx=5, pady=5)
+
+
+class ControlGui(customtkinter.CTkFrame):
+    def __init__(self, parent, dimmer, function):
+        super().__init__(parent)
+        self.dimmer = dimmer
+        self.monitors = dimmer.monitors
+        self.link = False
+        self.monitor2_connected = True
+        self.monitor2_created = False
+
+        if self.monitor2_connected:
+            self.monitor2_create(self.monitors)
+
+        # Monitor 1
+        if 'intel' in self.monitors.keys():
+            self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, width=70, anchor='center')
+            self.name1.grid(row=0, column=0)
+
+            initial_value = self.dimmer.monitors['intel'].actual_brightness_100
+
+            self.label1 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
+            self.label1.grid(row=0, column=1)
+
+            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors['intel'], self.label1), number_of_steps=100)
+            self.scale1.set(initial_value)
+            self.scale1.grid(row=0, column=2)
+
+        # Function name
+        self.function = customtkinter.CTkLabel(self, text=function, width=80, anchor="center")
+        self.function.grid(row=0, column=3)
+
+        self.switch2 = customtkinter.CTkSwitch(self, command=self.toggle_monitor2_connection, text="Connected")
+        self.switch2.grid(row=1, column=4)
         
-        slider.set(initial_brightness)  # Load from system
-        slider.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
 
-        # Custom label for showing slider value with fixed width and monospaced font
-        label = tk.Label(window, text=str(initial_brightness), font=("Courier", 10), width=5, anchor="w")
-        label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
-        label_dict[monitor] = label
+    def monitor2_create(self, monitors):
+        # Monitor 2
+        if 'display 1' in monitors.keys():
 
-        sliders.append(slider)
+            self.monitor2_created = True
+            self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, width=70, anchor='center')
+            self.name2.grid(row=1, column=0)
 
-        row += 1
+            initial_value = self.dimmer.monitors['display 1'].actual_brightness_100
 
-    # Create and pack the check button to link the sliders
-    if len(connected_monitors) > 1:
-        link_check = tk.Checkbutton(window, text="Link software", variable=link_sliders)
-        link_check.grid(row=row, column=0, columnspan=1, pady=10)
-        link_check2 = tk.Checkbutton(window, text="Link hardware", variable=link_sliders2)
-        link_check2.grid(row=row, column=1, columnspan=1, pady=10)
-        row += 1
+            self.label2 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
+            self.label2.grid(row=1, column=1)
 
-
-    # Scales via hardware
-    tk.Label(window, text="main monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
-    main = tk.Scale(window, from_=1200, to=120000, orient="horizontal", command=lambda val: set_brightness_brightnessctl(int(val), second_monitor, label_dict, link_sliders2, last_update_time), showvalue=False, length=300)
-    main.set(read_actual_brightness())  # Load from system
-    main.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
-    sliders_hardware.append(main)
-
-    # Custom label for showing slider value
-    label = tk.Label(window, text=str(read_actual_brightness()), font=("Courier", 10), width=5, anchor="w")
-    label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
-    label_dict['main'] = label
-    row += 1
-
-    if len(connected_monitors) >1:
-        tk.Label(window, text="second monitor").grid(row=row, column=0, padx=10, pady=5, sticky="w")
-        second_monitor = tk.Scale(window, from_=0, to=100, orient="horizontal", command=lambda val: set_brightness_ddcutil(int(val),second_monitor, label_dict, last_update_time), showvalue=False, length=300)
-        current_brightness = read_current_brightness_ddcutil()
-        second_monitor.set(current_brightness)  # Load from system
-        second_monitor.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
-        sliders_hardware.append(second_monitor)
-
-        # Custom label for showing slider value
-        label = tk.Label(window, text=str(current_brightness), font=("Courier", 10), width=5, anchor="w")
-        label.grid(row=row, column=2, padx=10, pady=5, sticky="w")
-        label_dict['second'] = label
-
-
-    # Set the initial transparency
-    window.after(100, lambda: window.attributes("-alpha", config.TRANSPARENCY / 100))
-
-    # Adjust column weights to make sure sliders expand
-    window.grid_columnconfigure(1, weight=1)
+            self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors['display 1'], self.label2), number_of_steps=100)
+            self.scale2.set(initial_value)
+            self.scale2.grid(row=1, column=2)
+            
+            # Link monitors
+            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, width=80, text="join")
+            self.switch.grid(row=1, column=3)
     
-    # Start the periodic brightness update
-    update_brightness_main(window, label_dict, main, second_monitor, link_sliders2)
+    def monitor2_hide(self):
+        self.name2.grid_forget()
+        self.label2.grid_forget()
+        self.scale2.grid_forget()
+        self.switch.grid_forget()
 
-    # Start the Tkinter event loop
-    window.mainloop()
+    def monitor2_show(self):
+        self.name2.grid(row=1, column=0)
+        self.label2.grid(row=1, column=1)
+        self.scale2.grid(row=1, column=2)
+        self.switch.grid(row=1, column=3)
 
-# Function to create a simple image for the tray icon
-def create_image(color):
-    width = 64
-    height = 64
-    image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-    dc = ImageDraw.Draw(image)
-    dc.rectangle((0, 0, width, height), fill=color)
-    return image
-
-def create_image(color):
-    width = 64
-    height = 64
-    image = Image.new('RGBA', (width, height), (173, 216, 230, 255))  # Light blue background
-    dc = ImageDraw.Draw(image)
+    def on_slide(self, value, monitor, label):
+        value = int(value)
+        print(value, type(value), monitor.type)
+        if self.link and self.monitor2_connected:
+            self.label1.configure(text=value)
+            self.label2.configure(text=value)
+            self.scale2.set(value)
+            # Update brightness of all monitors
+            self.dimmer.slider_set(value/100)
+        else:
+            label.configure(text=value)
+            # Update brightness of one monitors
+            self.dimmer.slider_set(value/100, monitor)
     
-    # Draw the circle in the middle
-    circle_radius = 12
-    circle_center = (width // 2, height // 2)
-    dc.ellipse(
-        (circle_center[0] - circle_radius, circle_center[1] - circle_radius,
-         circle_center[0] + circle_radius, circle_center[1] + circle_radius),
-        fill="black"
-    )
+    def toggle_link(self):
+        self.link = not self.link
+        print(self.link)
+        if self.link:
+            self.scale2.configure(state='disabled', button_color = ('gray40', '#AAB0B5'), progress_color='transparent')
+            self.scale2.set(self.scale1.get())
+            self.label2.grid_forget()
+            # update brightness and label
+            self.label2.configure(text=self.dimmer.link_update())
+        else:
+            self.scale2.configure(state='normal', button_color=('#3B8ED0', '#1F6AA5'), progress_color=('#3B8ED0', '#1F6AA5'))
+            self.label2.grid(row=1, column=1)
     
-    # Draw the sun rays
-    num_rays = 8
-    ray_length = 25
-    for i in range(num_rays):
-        angle = 360 / num_rays * i
-        x_end = circle_center[0] + ray_length * math.cos(math.radians(angle))
-        y_end = circle_center[1] + ray_length * math.sin(math.radians(angle))
-        dc.line([circle_center, (x_end, y_end)], fill="black", width=6)
+    def toggle_monitor2_connection(self):
+        if self.monitor2_created:
+            self.monitor2_connected = not self.monitor2_connected
+            print(self.monitor2_connected)
+            if self.monitor2_connected:
+                self.monitor2_show()
+            else:
+                self.monitor2_hide()
     
-    return image
-
-# Function to set up the tray icon
-def setup(icon):
-    icon.visible = True
-    
-# Create and run the tray icon in a separate thread
-icon = pystray.Icon("brightness_icon", create_image((255, 0, 0, 255)), menu=menu)
-threading.Thread(target=icon.run, args=(setup,)).start()
-
-# Start the Tkinter app in the main thread
-create_window()
+    def update_remote_values(self, time=0):
+        value = self.dimmer.check_if_changed()
+        if value is not None:
+            self.on_slide(value, self.monitors['intel'], self.label1)
+            self.scale1.set(value)
+        self.after(time, lambda: gui.frame.update_remote_values(time=time))
+        
+           
+d = Dimmer()
+gui = Gui(d)
+# read brightness changes made from computer and updates GUI
+gui.after(3000, lambda: gui.frame.update_remote_values(time=200))
+gui.mainloop()
