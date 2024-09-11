@@ -51,7 +51,7 @@ class Jobs:
 
 
 class MonitorInt():
-    def __init__(self, name='screen1', type='internal', set_command='f"brightnessctl set {value}"' ):
+    def __init__(self, name='screen1', type='internal', set_command='f"brightnessctl set {value}"' , *args, **kwargs):
         self.type = type
         self.name = name
         self.set_command = set_command
@@ -59,6 +59,8 @@ class MonitorInt():
         self.MIN_VALUE_BRIGHTNESS = 1200
         self.INTERVAL = 0.001
         self.changed = False
+        self.args = args
+        self.kwargs = kwargs
                 
         # Value and time 
         self.actual_brightness_read_time = None # DELETE
@@ -170,3 +172,17 @@ class MonitorExt(MonitorInt):
         except subprocess.CalledProcessError as e:
             print(f"Error reading brightness: {e}")
             return None
+
+
+class MonitorSoftware(MonitorInt):
+    def __init__(self, name='test', set_command='f"xrandr --output {display} --brightness {value}"', *args, **kwargs):
+        super().__init__(name=name, set_command=set_command, *args, **kwargs)
+        self.MAX_VALUE_BRIGHTNESS = 1.0
+        self.MIN_VALUE_BRIGHTNESS = 0.2
+    
+    def _set_command(self, value):
+        self.kwargs['value'] = value
+        command = eval(self.set_command.format(**self.kwargs))
+        command_list = command.split()
+        print(command_list)
+        return command_list

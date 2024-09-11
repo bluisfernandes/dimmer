@@ -1,4 +1,4 @@
-from monitors import MonitorInt, MonitorExt
+from monitors import MonitorInt, MonitorExt, MonitorSoftware
 import subprocess
 import customtkinter
 
@@ -19,6 +19,8 @@ class Dimmer():
     def update_connection(self):
         self._check_connection_primary()
         self._check_connection_second()
+        self._check_connection_software(' eDP-1')
+        self._check_connection_software(' DP-1')
 
     def _check_connection_primary(self, display_name='intel'):
         command_list = "brightnessctl -l |grep "'backlight'"".split()
@@ -36,6 +38,16 @@ class Dimmer():
         if display_name in result.stdout:
             if name not in self.monitors:
                 self.monitors[name] = MonitorExt(name)
+        elif name in self.monitors:
+                del self.monitors[name]
+
+    def _check_connection_software(self, display_name=' eDP-1'):
+        command_list = "xrandr --listactivemonitors".split()
+        result = subprocess.run(command_list, capture_output=True, text=True, check=True)
+        name = str.lower(display_name)
+        if display_name in result.stdout:
+            if name not in self.monitors:
+                self.monitors[name] = MonitorSoftware(display=''.join(display_name.split()))
         elif name in self.monitors:
                 del self.monitors[name]
     
@@ -61,8 +73,9 @@ class Dimmer():
             self.brightnesses.update({monitor.name :round(value*100)})
         elif self.linked is True:
             for _, monitor in self.monitors.items():
-                monitor.set(value)
-                self.brightnesses.update({monitor.name :value*100})
+                if monitor.name in ['intel', 'display 1']:
+                    monitor.set(value)
+                    self.brightnesses.update({monitor.name :value*100})
     
     def check_if_changed(self):
         value = self.monitors['intel'].read()
@@ -85,36 +98,38 @@ class Gui(customtkinter.CTk):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=3)
 
-        self.frame = ControlGui(self, self.dimmer, "backlight")
+        self.frame = ControlGui(self, self.dimmer, "backlight", name_int='intel', name_ext='display 1')
         self.frame.grid(row=0, column=0, padx=5, pady=5)
 
-        self.frame2 = ControlGui(self, self.dimmer, "software")
+        self.frame2 = ControlGui(self, self.dimmer, "software", name_int=' edp-1', name_ext=' dp-1')
         self.frame2.grid(row=1, column=0, padx=5, pady=5)
 
 
 class ControlGui(customtkinter.CTkFrame):
-    def __init__(self, parent, dimmer, function):
+    def __init__(self, parent, dimmer, function, name_int='intel', name_ext='display 1'):
         super().__init__(parent)
         self.dimmer = dimmer
         self.monitors = dimmer.monitors
         self.link = False
         self.monitor2_connected = True
         self.monitor2_created = False
+        self.name_int = name_int
+        self.name_ext = name_ext
 
         if self.monitor2_connected:
             self.monitor2_create(self.monitors)
 
         # Monitor 1
-        if 'intel' in self.monitors.keys():
-            self.name1 =customtkinter.CTkLabel(self, text=self.monitors['intel'].type, width=70, anchor='center')
+        if self.name_int in self.monitors.keys():
+            self.name1 =customtkinter.CTkLabel(self, text=self.monitors[self.name_int].type, width=70, anchor='center')
             self.name1.grid(row=0, column=0)
 
-            initial_value = self.dimmer.monitors['intel'].actual_brightness_100
+            initial_value = self.dimmer.monitors[self.name_int].actual_brightness_100
 
             self.label1 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label1.grid(row=0, column=1)
 
-            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors['intel'], self.label1), number_of_steps=100)
+            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors[self.name_int], self.label1), number_of_steps=100)
             self.scale1.set(initial_value)
             self.scale1.grid(row=0, column=2)
 
@@ -128,18 +143,18 @@ class ControlGui(customtkinter.CTkFrame):
 
     def monitor2_create(self, monitors):
         # Monitor 2
-        if 'display 1' in monitors.keys():
+        if self.name_ext in monitors.keys():
 
             self.monitor2_created = True
-            self.name2 =customtkinter.CTkLabel(self, text=monitors['display 1'].type, width=70, anchor='center')
+            self.name2 =customtkinter.CTkLabel(self, text=monitors[self.name_ext].type, width=70, anchor='center')
             self.name2.grid(row=1, column=0)
 
-            initial_value = self.dimmer.monitors['display 1'].actual_brightness_100
+            initial_value = self.dimmer.monitors[self.name_ext].actual_brightness_100
 
             self.label2 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label2.grid(row=1, column=1)
 
-            self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors['display 1'], self.label2), number_of_steps=100)
+            self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors[self.name_ext], self.label2), number_of_steps=100)
             self.scale2.set(initial_value)
             self.scale2.grid(row=1, column=2)
             
@@ -198,7 +213,7 @@ class ControlGui(customtkinter.CTkFrame):
     def update_remote_values(self, time=0):
         value = self.dimmer.check_if_changed()
         if value is not None:
-            self.on_slide(value, self.monitors['intel'], self.label1)
+            self.on_slide(value, self.monitors[self.name_int], self.label1)
             self.scale1.set(value)
         self.after(time, lambda: gui.frame.update_remote_values(time=time))
         
