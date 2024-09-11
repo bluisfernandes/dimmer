@@ -19,8 +19,8 @@ class Dimmer():
     def update_connection(self):
         self._check_connection_primary()
         self._check_connection_second()
-        self._check_connection_software(' eDP-1')
-        self._check_connection_software(' DP-1')
+        self._check_connection_software(' eDP-1', type='internal')
+        self._check_connection_software(' DP-1', type='external')
 
     def _check_connection_primary(self, display_name='intel'):
         command_list = "brightnessctl -l |grep "'backlight'"".split()
@@ -41,13 +41,13 @@ class Dimmer():
         elif name in self.monitors:
                 del self.monitors[name]
 
-    def _check_connection_software(self, display_name=' eDP-1'):
+    def _check_connection_software(self, display_name=' eDP-1',*args, **kwargs):
         command_list = "xrandr --listactivemonitors".split()
         result = subprocess.run(command_list, capture_output=True, text=True, check=True)
         name = str.lower(display_name)
         if display_name in result.stdout:
             if name not in self.monitors:
-                self.monitors[name] = MonitorSoftware(display=''.join(display_name.split()))
+                self.monitors[name] = MonitorSoftware(display=''.join(display_name.split()), *args, **kwargs)
         elif name in self.monitors:
                 del self.monitors[name]
     
