@@ -73,9 +73,8 @@ class Dimmer():
             self.brightnesses.update({monitor.name :round(value*100)})
         elif self.linked is True:
             for _, monitor in self.monitors.items():
-                if monitor.name in ['intel', 'display 1']:
-                    monitor.set(value)
-                    self.brightnesses.update({monitor.name :value*100})
+                monitor.set(value)
+                self.brightnesses.update({monitor.name :value*100})
     
     def check_if_changed(self):
         value = self.monitors['intel'].read()
@@ -182,7 +181,9 @@ class ControlGui(customtkinter.CTkFrame):
             self.label2.configure(text=value)
             self.scale2.set(value)
             # Update brightness of all monitors
-            self.dimmer.slider_set(value/100)
+            for monitor in self.monitors:
+                if monitor in [self.name_int, self.name_ext]:
+                    self.dimmer.slider_set(value/100, monitor)
         else:
             label.configure(text=value)
             # Update brightness of one monitors
