@@ -114,6 +114,7 @@ class ControlGui(customtkinter.CTkFrame):
         self.monitor2_created = False
         self.name_int = name_int
         self.name_ext = name_ext
+        self.min_scale = 0 if self.name_int == 'intel' else 20
 
         if self.monitor2_connected:
             self.monitor2_create(self.monitors)
@@ -128,7 +129,7 @@ class ControlGui(customtkinter.CTkFrame):
             self.label1 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label1.grid(row=0, column=1)
 
-            self.scale1 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, self.monitors[self.name_int], self.label1), number_of_steps=100)
+            self.scale1 = customtkinter.CTkSlider(self, from_=self.min_scale, to=100, command= lambda val: self.on_slide(val, self.monitors[self.name_int], self.label1), number_of_steps=100-self.min_scale)
             self.scale1.set(initial_value)
             self.scale1.grid(row=0, column=2)
 
@@ -153,7 +154,7 @@ class ControlGui(customtkinter.CTkFrame):
             self.label2 = customtkinter.CTkLabel(self, text=initial_value, width=40, anchor="center")
             self.label2.grid(row=1, column=1)
 
-            self.scale2 = customtkinter.CTkSlider(self, to=100, command= lambda val: self.on_slide(val, monitors[self.name_ext], self.label2), number_of_steps=100)
+            self.scale2 = customtkinter.CTkSlider(self, from_=self.min_scale, to=100, command= lambda val: self.on_slide(val, monitors[self.name_ext], self.label2), number_of_steps=100-self.min_scale)
             self.scale2.set(initial_value)
             self.scale2.grid(row=1, column=2)
             
