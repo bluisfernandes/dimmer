@@ -59,7 +59,6 @@ class Dimmer():
         if self.linked and len(self.monitors) >= 2:
             val=self.monitors['intel'].read()
             self.brightnesses['intel'] = round(val * 100)
-            print(round(val * 100), end='')
             if self.monitors['display 1'].actual_brightness_100 != round(val * 100):
                 self.monitors['display 1'].set(val)
                 self.brightnesses['display 1'] = round(val * 100)
@@ -81,7 +80,6 @@ class Dimmer():
         value = round(value * 100)
         if self.brightnesses['intel'] != value:
             self.brightnesses['intel'] = value
-            print(value)
             return value
         else:
             return None
@@ -177,7 +175,6 @@ class ControlGui(customtkinter.CTkFrame):
 
     def on_slide(self, value, monitor, label):
         value = int(value)
-        print(value, type(value), monitor.type)
         if self.link and self.monitor2_connected:
             self.label1.configure(text=value)
             self.label2.configure(text=value)
@@ -193,7 +190,6 @@ class ControlGui(customtkinter.CTkFrame):
     
     def toggle_link(self):
         self.link = not self.link
-        print(self.link)
         if self.link:
             self.scale2.configure(state='disabled', button_color = ('gray40', '#AAB0B5'), progress_color='transparent')
             self.scale2.set(self.scale1.get())
@@ -207,7 +203,6 @@ class ControlGui(customtkinter.CTkFrame):
     def toggle_monitor2_connection(self):
         if self.monitor2_created:
             self.monitor2_connected = not self.monitor2_connected
-            print(self.monitor2_connected)
             if self.monitor2_connected:
                 self.monitor2_show()
             else:

@@ -128,7 +128,6 @@ class MonitorInt():
         if not self.thread or not self.thread.is_alive():
             self.thread = threading.Thread(target=self._worker, args=())
             self.thread.start()
-            print(f"created new thread for {value}")
         
         self.actual_brightness_1 = self._convert_int_to_float(value)
         self.actual_brightness_100 = round(self.actual_brightness_1 * 100)
@@ -184,5 +183,4 @@ class MonitorSoftware(MonitorInt):
         self.kwargs['value'] = value
         command = eval(self.set_command.format(**self.kwargs))
         command_list = command.split()
-        print(command_list)
         return command_list
