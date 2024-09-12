@@ -109,7 +109,7 @@ class ControlGui(customtkinter.CTkFrame):
         super().__init__(parent)
         self.dimmer = dimmer
         self.monitors = dimmer.monitors
-        self.link = False
+        self.link = True
         self.monitor2_connected = True
         self.monitor2_created = False
         self.name_int = name_int
@@ -159,7 +159,8 @@ class ControlGui(customtkinter.CTkFrame):
             self.scale2.grid(row=1, column=2)
             
             # Link monitors
-            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, width=80, text="join")
+            switch_state = customtkinter.BooleanVar(value=self.link)
+            self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, variable=switch_state, width=80, text="join")
             self.switch.grid(row=1, column=3)
     
     def monitor2_hide(self):
