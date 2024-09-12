@@ -114,9 +114,6 @@ class ControlGui(customtkinter.CTkFrame):
         self.name_ext = name_ext
         self.min_scale = 0 if self.name_int == 'intel' else 20
 
-        if self.monitor2_connected:
-            self.monitor2_create(self.monitors)
-
         # Monitor 1
         if self.name_int in self.monitors.keys():
             self.name1 =customtkinter.CTkLabel(self, text=self.monitors[self.name_int].type, width=70, anchor='center')
@@ -137,6 +134,9 @@ class ControlGui(customtkinter.CTkFrame):
 
         self.switch2 = customtkinter.CTkSwitch(self, command=self.toggle_monitor2_connection, text="Connected")
         self.switch2.grid(row=1, column=4)
+
+        if self.monitor2_connected:
+            self.monitor2_create(self.monitors)
         
 
     def monitor2_create(self, monitors):
@@ -160,7 +160,10 @@ class ControlGui(customtkinter.CTkFrame):
             switch_state = customtkinter.BooleanVar(value=self.link)
             self.switch = customtkinter.CTkSwitch(self, command=self.toggle_link, variable=switch_state, width=80, text="join")
             self.switch.grid(row=1, column=3)
-    
+            # Update GUI with correct layout
+            self.link = not self.link
+            self.toggle_link()
+
     def monitor2_hide(self):
         self.name2.grid_forget()
         self.label2.grid_forget()
