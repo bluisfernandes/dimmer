@@ -107,11 +107,11 @@ class ControlGui(customtkinter.CTkFrame):
         super().__init__(parent)
         self.dimmer = dimmer
         self.monitors = dimmer.monitors
-        self.link = True
-        self.monitor2_connected = True
-        self.monitor2_created = False
         self.name_int = name_int
         self.name_ext = name_ext
+        self.link = True
+        self.monitor2_connected = self.name_ext in self.monitors
+        self.monitor2_created = False
         self.min_scale = 0 if self.name_int == 'intel' else 20
 
         # Monitor 1
@@ -132,7 +132,7 @@ class ControlGui(customtkinter.CTkFrame):
         self.function = customtkinter.CTkLabel(self, text=function, width=80, anchor="center")
         self.function.grid(row=0, column=3)
 
-        self.switch2 = customtkinter.CTkSwitch(self, command=self.toggle_monitor2_connection, text="Connected")
+        self.switch2 = customtkinter.CTkSwitch(self, command=self.update_monitors, text="update")
         self.switch2.grid(row=1, column=4)
 
         if self.monitor2_connected:
@@ -141,6 +141,7 @@ class ControlGui(customtkinter.CTkFrame):
 
     def monitor2_create(self, monitors):
         # Monitor 2
+        self.monitor2_connected = True
         if self.name_ext in monitors.keys():
 
             self.monitor2_created = True
@@ -210,6 +211,18 @@ class ControlGui(customtkinter.CTkFrame):
                 self.monitor2_show()
             else:
                 self.monitor2_hide()
+    
+    def update_monitors(self):
+        self.dimmer.update_connection()
+        if self.name_ext in self.monitors:
+            if not self.monitor2_created:
+                self.monitor2_create(self.monitors)
+            else:
+                self.monitor2_show()
+        else:
+            if self.monitor2_created:
+                self.monitor2_hide()
+
     
     def update_remote_values(self, time=0):
         value = self.dimmer.check_if_changed()
