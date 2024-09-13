@@ -178,6 +178,7 @@ class MonitorSoftware(MonitorInt):
         super().__init__(name=name, set_command=set_command, *args, **kwargs)
         self.MAX_VALUE_BRIGHTNESS = 1.0
         self.MIN_VALUE_BRIGHTNESS = 0.2
+        self.actual_brightness_100 = 100
     
     def _set_command(self, value):
         self.kwargs['value'] = value
