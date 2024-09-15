@@ -92,6 +92,7 @@ class Gui(customtkinter.CTk):
         super().__init__()
         self.dimmer = dimmer
         self.title('Brightness Control')
+        self.resizable(False, False)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=3)
 
