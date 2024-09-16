@@ -102,6 +102,25 @@ class Gui(customtkinter.CTk):
         self.frame2 = ControlGui(self, self.dimmer, "software", name_int=' edp-1', name_ext=' dp-1')
         self.frame2.grid(row=1, column=0, padx=5, pady=5)
 
+        self.frame3 = ControlUpdate(self, "update", frames=[self.frame, self.frame2])
+        self.frame3.grid(row=0, column=1, rowspan=2, padx=5, pady=5)
+
+
+class ControlUpdate(customtkinter.CTkFrame):
+    def __init__(self, parent, function, frames):
+        super().__init__(parent)
+        self.frames = frames
+        self.function = function
+        self.create_button()
+    
+    def create_button(self):
+        self.button_update = customtkinter.CTkButton(self, text=self.function, command=self.on_update_click, width=40, height=70)
+        self.button_update.pack()
+            
+    def on_update_click(self):
+        for frame in self.frames:
+            frame.update_monitors()
+
 
 class ControlGui(customtkinter.CTkFrame):
     def __init__(self, parent, dimmer, function, name_int='intel', name_ext='display 1'):
@@ -132,9 +151,6 @@ class ControlGui(customtkinter.CTkFrame):
         # Function name
         self.function = customtkinter.CTkLabel(self, text=function, width=80, anchor="center")
         self.function.grid(row=0, column=3)
-
-        self.switch2 = customtkinter.CTkSwitch(self, command=self.update_monitors, text="update")
-        self.switch2.grid(row=1, column=4)
 
         if self.monitor2_connected:
             self.monitor2_create(self.monitors)
