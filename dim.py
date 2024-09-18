@@ -143,7 +143,7 @@ class TrayApp:
         # Circle properties
         sun_radius = 20
         sun_center = (image_size // 2, image_size // 2)
-        sun_color = "yellow"
+        sun_color = "white"
         
         # Draw the sun (circle)
         draw.ellipse([sun_center[0] - sun_radius, sun_center[1] - sun_radius, 
