@@ -22,7 +22,6 @@ class Dimmer():
         self._check_connection_software(' eDP-1', type='internal')
         self._check_connection_software(' DP-1', type='external')
 
-
     def _check_connection_primary(self, display_name='intel'):
         command_list = "brightnessctl -l |grep "'backlight'"".split()
         result = subprocess.run(command_list, capture_output=True, text=True, check=True)
@@ -122,37 +121,6 @@ class ControlUpdate(customtkinter.CTkFrame):
         for frame in self.frames:
             frame.update_monitors()
 
-# Function to set brightness using xrandr with throttling
-def set_brightness(display, brightness):
-    brightness = max(brightness, config["min_brightness"])
-    current_time = time.time()
-    if display not in last_update_time or (current_time - last_update_time[display]) >= UPDATE_INTERVAL:
-        if display in config["dont_change_screen"]:
-            return
-        last_update_time[display] = current_time
-        cmd_list = f"xrandr --output {display} --brightness {brightness}".split()
-        subprocess.run(cmd_list)
-
-# Function to get the list of connected monitors
-def get_connected_monitors():
-    try:
-        output = subprocess.check_output(['xrandr'], text=True)
-        lines = output.split('\n')
-        monitors = []
-        for line in lines:
-            if ' connected ' in line:
-                monitor_name = line.split(' ')[0]
-                monitors.append(monitor_name)
-        return monitors
-    except subprocess.CalledProcessError as e:
-        print("Error running xrandr:", e)
-        return []
-
-# Update brightness based on slider value
-def update_brightness(monitor, val):
-    brightness = float(val) / 100
-    set_brightness(monitor, brightness)
-    label_dict[monitor].config(text=val)
 
 class ControlGui(customtkinter.CTkFrame):
     def __init__(self, parent, dimmer, function, name_int='intel', name_ext='display 1'):
