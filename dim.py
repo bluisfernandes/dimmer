@@ -1,6 +1,11 @@
 from monitors import MonitorInt, MonitorExt, MonitorSoftware
 import subprocess
 import customtkinter
+from pystray import Icon, MenuItem, Menu
+from PIL import Image, ImageDraw
+import threading
+import sys
+import math
 
 customtkinter.set_default_color_theme("blue")
 
@@ -104,6 +109,75 @@ class Gui(customtkinter.CTk):
 
         self.frame3 = ControlUpdate(self, "update", frames=[self.frame, self.frame2])
         self.frame3.grid(row=0, column=1, rowspan=2, padx=5, pady=5)
+
+        self.protocol("WM_DELETE_WINDOW", self.hide_gui)
+        self.hide_gui()
+
+    def hide_gui(self):
+        self.withdraw()
+    
+    def show_gui(self):
+        self.deiconify()
+    
+    def run(self):
+        self.mainloop()
+
+
+class TrayApp:
+    def __init__(self, gui):
+        self.gui = gui
+        self.icon_image = self.create_image()
+        self.menu = Menu(
+            MenuItem("Open", self.open_app),
+            MenuItem("Quit", self.quit_app)
+        )
+
+        self.icon = Icon("Brightness", self.icon_image, menu=self.menu)
+
+    def create_image(self):
+        # Define the size of the image
+        image_size = 64
+        image = Image.new('RGBA', (image_size, image_size), (0, 0, 0, 0))  # Transparent background
+        draw = ImageDraw.Draw(image)
+
+        # Circle properties
+        sun_radius = 20
+        sun_center = (image_size // 2, image_size // 2)
+        sun_color = "yellow"
+        
+        # Draw the sun (circle)
+        draw.ellipse([sun_center[0] - sun_radius, sun_center[1] - sun_radius, 
+                    sun_center[0] + sun_radius, sun_center[1] + sun_radius], fill=sun_color)
+        
+        # Draw the sun rays
+        num_rays = 10
+        ray_length = 30
+        ray_color = "orange"
+        
+        for i in range(num_rays):
+            angle = (i * 360 / num_rays)
+            ray_start = (sun_center[0] + sun_radius * 0.6 * math.cos(math.radians(angle)),
+                        sun_center[1] + sun_radius * 0.6 * math.sin(math.radians(angle)))
+            ray_end = (sun_center[0] + ray_length * math.cos(math.radians(angle)),
+                    sun_center[1] + ray_length * math.sin(math.radians(angle)))
+            draw.line([ray_start, ray_end], fill=ray_color, width=5)
+
+        return image
+    
+    def open_app(self):
+        self.gui.show_gui()
+    
+    def hide_app(self):
+        self.gui.hide_gui()
+    
+    def quit_app(self):
+        self.icon.stop()
+        self.gui.quit()
+        sys.exit()
+    
+    def run(self):
+        """Run the tray icon in a separate thread."""
+        threading.Thread(target=self.icon.run, daemon=True).start()
 
 
 class ControlUpdate(customtkinter.CTkFrame):
@@ -251,6 +325,9 @@ class ControlGui(customtkinter.CTkFrame):
            
 d = Dimmer()
 gui = Gui(d)
+tray = TrayApp(gui)
+
 # read brightness changes made from computer and updates GUI
 gui.after(3000, lambda: gui.frame.update_remote_values(time=200))
-gui.mainloop()
+tray.run()
+gui.run()
